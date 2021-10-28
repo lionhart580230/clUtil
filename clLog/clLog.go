@@ -3,6 +3,7 @@ package clLog
 import (
 	"fmt"
 	"github.com/xiaolan580230/clUtil/clTime"
+	"runtime"
 	"time"
 )
 
@@ -77,14 +78,20 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 	if _args != nil && len(_args) > 0 {
 		content = fmt.Sprintf(_fmt, _args...)
 	}
+
+	debugFile := ""
+	_, file, line, ok := runtime.Caller(2)
+	if ok {
+		debugFile = fmt.Sprintf("%v:%v", file, line)
+	}
 	switch _type {
 	case LogFlagInfo:
-		fmt.Printf("%v%v %v\n", "[Info]", timeStr, content)
+		fmt.Printf("%v %v%v %v\n", timeStr, "[Info]", debugFile, content)
 	case LogFlagWarning:
-		fmt.Printf("%v%v %v\n", "[Warn]",  timeStr, content)
+		fmt.Printf("%v %v%v %v\n", timeStr, "[Warn]", debugFile, content)
 	case LogFlagError:
-		fmt.Printf("%v%v %v\n", "[Err]",  timeStr, content)
+		fmt.Printf("%v %v%v %v\n", timeStr, "[Err]", debugFile, content)
 	case LogFlagDebug:
-		fmt.Printf("%v%v %v\n", "[Debug]",  timeStr, content)
+		fmt.Printf("%v %v%v %v\n", timeStr, "[Debug]", debugFile, content)
 	}
 }

@@ -377,7 +377,7 @@ func getTargetTime(timestamp uint32) *time.Time {
 
 // 获取指定时间日期的时间戳
 func GetTimeStamp(date string) uint32 {
-	timedate, _ := time.Parse("2006-01-02 15:04:05", date)
+	timedate, _ := time.Parse("2006-1-2 15:04:05", date)
 	utc := timedate.UTC().Add(-8 * time.Hour)
 	//utc := timedate.UTC()
 	loc, err := time.LoadLocation("Asia/Taipei")

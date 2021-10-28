@@ -303,7 +303,7 @@ func (this *ClHttpClient) Do() (*Response, error) {
 	if this.contentType == ContentTypeForm {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	} else if this.contentType == ContentJson {
-		req.Header.Set("Content-Type", "text/json")
+		req.Header.Set("Content-Type", "application/json")
 	} else if this.contentType == ContentXml {
 		req.Header.Set("Content-Type", "text/xml")
 	} else if this.contentType == ContentXWWWFormUrl {
