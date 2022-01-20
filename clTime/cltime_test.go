@@ -42,5 +42,10 @@ func TestNew(t *testing.T) {
 	curHourBegin, curHourEnd := nowtime.GetHourBetween(0)
 	fmt.Printf(">> 小时时间戳: %v - %v\n", curHourBegin, curHourEnd)
 	fmt.Printf(">> 小时日期: %v - %v\n", GetDate(curHourBegin), GetDate(curHourEnd))
+}
 
+
+
+func TestGetTimeStamp2(t *testing.T) {
+	fmt.Printf("时间戳: %v", GetTimeStamp2("2021/09/14", "2006/01/02"))
 }

@@ -3,11 +3,14 @@ package clLog
 import (
 	"fmt"
 	"github.com/xiaolan580230/clUtil/clTime"
+	"runtime"
+	"strings"
 	"time"
 )
 
 var logFlag uint32 = LogFlagAll
-
+var version string = ""
+var showTime bool = true
 const (
 	LogFlagInfo = 1 << 0
 	LogFlagDebug = 1 << 1
@@ -33,6 +36,15 @@ func SetLogFlag(_flag uint32) {
 	logFlag = _flag
 }
 
+// 设置版本号
+func SetVersion(_version string) {
+	version = _version
+}
+
+// 设置时间
+func SetShowTime(_show bool) {
+	showTime = _show
+}
 
 // 输出Info日志
 func Info(_fmt string, _args ...interface{}) {
@@ -77,14 +89,33 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 	if _args != nil && len(_args) > 0 {
 		content = fmt.Sprintf(_fmt, _args...)
 	}
+
+	debugFile := ""
+	_, file, line, ok := runtime.Caller(2)
+	if ok {
+		fileItems := strings.Split(file,"/")
+		debugFile = fmt.Sprintf("%v:%v", fileItems[len(fileItems)-1], line)
+	}
+
+	logContent := ""
+	if showTime {
+		logContent += timeStr
+	}
+
+	if version != "" {
+		logContent += " " + version
+	}
+	logContent += " " + debugFile
 	switch _type {
 	case LogFlagInfo:
-		fmt.Printf("%v%v %v\n", "[Info]", timeStr, content)
+		logContent += "[Info]"
 	case LogFlagWarning:
-		fmt.Printf("%v%v %v\n", "[Warn]",  timeStr, content)
+		logContent += "[Warn]"
 	case LogFlagError:
-		fmt.Printf("%v%v %v\n", "[Err]",  timeStr, content)
+		logContent += "[Err]"
 	case LogFlagDebug:
-		fmt.Printf("%v%v %v\n", "[Debug]",  timeStr, content)
+		logContent += "[Debug]"
 	}
+
+	fmt.Print(logContent + " " + content)
 }

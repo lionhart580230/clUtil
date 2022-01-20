@@ -1,4 +1,4 @@
-package cltask
+package clTask
 
 import (
 	"fmt"

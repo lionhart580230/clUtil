@@ -1,7 +1,8 @@
-package cltask
+package clTask
 
 import (
 	"fmt"
+	"github.com/xiaolan580230/clUtil/clLog"
 	"runtime"
 	"strings"
 	"time"
@@ -107,7 +108,7 @@ func NewTaskPerSec(tag string, name string, callback func(), sec uint32, run boo
 
 // 启动任务执行判断
 func (this *TaskInfo) Run(nowTime uint32, dayTime uint32, week uint32, _recoverCallback func(string, string)) {
-
+	clLog.Info("定时任务: %v 开始执行~", this.Name)
 	if _recoverCallback != nil {
 		defer func() {
 			if r := recover(); r != nil {

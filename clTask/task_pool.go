@@ -1,6 +1,7 @@
-package cltask
+package clTask
 
 import (
+	"github.com/xiaolan580230/clUtil/clLog"
 	"github.com/xiaolan580230/clUtil/clRedis"
 	"github.com/xiaolan580230/clUtil/clTime"
 	"time"
@@ -40,6 +41,7 @@ func (this *TaskPool) Start () {
 
 // 添加新的计划任务
 func (this *TaskPool) AddNew(task *TaskInfo) {
+	clLog.Info("定时任务添加: %+v", task)
 	this.pool = append(this.pool, task)
 }
 
