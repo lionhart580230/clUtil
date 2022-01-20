@@ -117,5 +117,5 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 		logContent += "[Debug]"
 	}
 
-	fmt.Print(logContent + " " + content)
+	fmt.Println(logContent + " " + content)
 }
