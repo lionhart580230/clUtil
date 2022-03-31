@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+
+type sqlJoin struct {
+	TableName string
+	JoinCondition string
+}
+
 /**
    数据库语句生成器
  */
@@ -41,6 +47,9 @@ type SqlBuider struct {
 
 	duplicateKey []string
 
+	leftJoin []sqlJoin
+	rightJoin []sqlJoin
+
 	dbType uint32
 	dbPointer *DBPointer
 	dbTx *ClTranslate
@@ -71,15 +80,30 @@ func (this *DBPointer) NewBuilder() *SqlBuider {
 		dbPointer: this,
 		dbType: 1,
 		dbname: this.Dbname,
+		leftJoin: make([]sqlJoin, 0),
+		rightJoin: make([]sqlJoin, 0),
 	}
 	return &sqlbuild
+}
+
+// 使用DBPointer进行构建器创建
+func (this *DBPointer) BuilderForTable(_tableName string) *SqlBuider {
+
+	sqlbuild := SqlBuider{
+		dbPointer: this,
+		dbType: 1,
+		dbname: this.Dbname,
+		leftJoin: make([]sqlJoin, 0),
+		rightJoin: make([]sqlJoin, 0),
+	}
+	return sqlbuild.Table(_tableName)
 }
 
 /**
    设置表格名称
    @param tablename string  要设置的表格名称
  */
-func (this *SqlBuider) Table(tablename string) (*SqlBuider) {
+func (this *SqlBuider) Table(tablename string) *SqlBuider {
 	this.tablename = tablename
 	this.whereStr = ""
 	this.fieldStr = ""
@@ -200,61 +224,11 @@ func (this *SqlBuider) DB(dbname string) *SqlBuider {
  */
 func (this *SqlBuider) Select() (*DbResult, error) {
 
-	if this.tablename == "" {
-		return nil, errors.New("EMPTY TABLE NAME")
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return nil, buildErr
 	}
-
-	if this.whereStr == "" {
-		this.whereStr = "1"
-	}
-
-	if this.fieldStr == "" {
-		this.fieldStr = "*"
-	}
-
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += " GROUP BY "+this.group
-	}
-
-
-	var FinallySql = ""
-	if len(this.unionalls) > 0 {
-		// 使用一般联表查询
-		for _, sub := range this.unionalls {
-			if FinallySql == "" {
-				FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v UNION ALL ", this.fieldStr, this.tablename, this.whereStr, extraSql)
-			}else{
-				FinallySql += " UNION ALL "
-			}
-			FinallySql += fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v", this.fieldStr, sub, this.whereStr, extraSql)
-		}
-	} else if len(this.unions) > 0 {
-		// 使用强制联表查询
-		for _, sub := range this.unions {
-			if FinallySql == "" {
-				FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v UNION ", this.fieldStr, this.tablename, this.whereStr, extraSql)
-			}else{
-				FinallySql += " UNION "
-			}
-			FinallySql += fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v", this.fieldStr, sub, this.whereStr, extraSql)
-		}
-	}
-
-	if this.orders != "" {
-		extraSql += " ORDER BY "+this.orders
-	}
-
-	if this.limit != "" {
-		extraSql += this.limit
-	}
-
-	if FinallySql == "" {
-		FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v", this.fieldStr, this.tablename, this.whereStr, extraSql)
-	} else {
-		FinallySql = fmt.Sprintf("SELECT %v FROM ( %v ) temp %v", this.fieldStr, FinallySql, extraSql)
-	}
-	this.finalSql = FinallySql
+	this.finalSql = sqlStr
 
 	var resp *DbResult = nil
 	var err error
@@ -262,11 +236,11 @@ func (this *SqlBuider) Select() (*DbResult, error) {
 
 	switch this.dbType {
 	case 0:		// 正常
-		resp, err = Query(FinallySql, this.expire)
+		resp, err = Query(sqlStr, this.expire)
 	case 1:		// Picker
-		resp, err = this.dbPointer.Query(FinallySql)
+		resp, err = this.dbPointer.Query(sqlStr)
 	case 2:		// 事务
-		resp, err = this.dbTx.QueryTx(FinallySql)
+		resp, err = this.dbTx.QueryTx(sqlStr)
 	}
 
 	return resp, err
@@ -277,84 +251,35 @@ func (this *SqlBuider) Select() (*DbResult, error) {
 	获取指定索引处的数据
 	@param idx int 索引id
  */
-func (this *SqlBuider) Find(idx int) (*clSuperMap.SuperMap, error) {
+func (this *SqlBuider) Find(idx uint32) (*clSuperMap.SuperMap, error) {
 
-	if this.tablename == "" {
-		return nil, errors.New("EMPTY TABLE NAME")
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return nil, buildErr
 	}
-
-	if this.whereStr == "" {
-		this.whereStr = "1"
-	}
-
-	if this.fieldStr == "" {
-		this.fieldStr = "*"
-	}
-
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += "GROUP BY "+this.group
-	}
-
-	var FinallySql = ""
-	if len(this.unionalls) > 0 {
-		// 使用一般联表查询
-		for _, sub := range this.unionalls {
-			if FinallySql == "" {
-				FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v UNION ALL ", this.fieldStr, this.tablename, this.whereStr, extraSql)
-			}else{
-				FinallySql += " UNION ALL "
-			}
-			FinallySql += fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v ", this.fieldStr, sub, this.whereStr, extraSql)
-		}
-	} else if len(this.unions) > 0 {
-		// 使用强制联表查询
-		for _, sub := range this.unions {
-			if FinallySql == "" {
-				FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v UNION ", this.fieldStr, this.tablename, this.whereStr, extraSql)
-			}else{
-				FinallySql += " UNION "
-			}
-			FinallySql += fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v ", this.fieldStr, sub, this.whereStr, extraSql)
-		}
-	}
-
-	if this.orders != "" {
-		extraSql += " ORDER BY "+this.orders
-	}
-
-	if this.limit != "" {
-		extraSql += this.limit
-	}
-
-	if FinallySql == "" {
-		FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v", this.fieldStr, this.tablename, this.whereStr, extraSql)
-	} else {
-		FinallySql = fmt.Sprintf("SELECT %v FROM ( %v ) temp %v", this.fieldStr, FinallySql, extraSql)
-	}
-	this.finalSql = FinallySql
+	this.finalSql = sqlStr
 
 	var resp *DbResult = nil
 	var err error
 
 	switch this.dbType {
 	case 0:		// 正常
-		resp, err = Query(FinallySql, this.expire)
+		resp, err = Query(sqlStr, this.expire)
 	case 1:		// Picker
-		resp, err = this.dbPointer.Query(FinallySql)
+		resp, err = this.dbPointer.Query(sqlStr)
 	case 2:		// 事务
-		resp, err = this.dbTx.QueryTx(FinallySql)
+		resp, err = this.dbTx.QueryTx(sqlStr)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	if resp == nil || resp.Length == 0{
+	if resp == nil || resp.Length <= idx {
 		return nil, nil
 	}
 
-	return resp.ArrResult[0], nil
+	return resp.ArrResult[idx], nil
 }
 
 /**
@@ -364,57 +289,20 @@ func (this *SqlBuider) Find(idx int) (*clSuperMap.SuperMap, error) {
  */
 func (this *SqlBuider) Count() (int32, error) {
 
-	if this.tablename == "" {
-		return 0, errors.New("EMPTY TABLE NAME")
+	this.fieldStr = fmt.Sprintf("COUNT(*) as t_count")
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return 0, buildErr
 	}
 
-	if this.whereStr == "" {
-		this.whereStr = "1"
-	}
-
-	if this.fieldStr == "" {
-		this.fieldStr = "*"
-	}
-
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += "GROUP BY "+this.group
-	}
-
-	var FinallySql = ""
-	if len(this.unionalls) > 0 {
-		for _, val := range this.unionalls {
-			if FinallySql == "" {
-				FinallySql = fmt.Sprintf("SELECT COUNT(*) as t_count FROM %v WHERE %v UNION ALL ", this.tablename, this.whereStr)
-			} else {
-				FinallySql += " UNION ALL "
-			}
-			FinallySql += fmt.Sprintf("SELECT COUNT(*) as t_count FROM %v WHERE %v ", val, this.whereStr)
-		}
-	} else if len(this.unions) > 0 {
-		for _, val := range this.unions {
-			if FinallySql == "" {
-				FinallySql = fmt.Sprintf("SELECT COUNT(*) as t_count FROM %v WHERE %v UNION ALL ", this.tablename, this.whereStr)
-			} else {
-				FinallySql += " UNION ALL "
-			}
-			FinallySql += fmt.Sprintf("SELECT COUNT(*) as t_count FROM %v WHERE %v ", val, this.whereStr)
-		}
-	}
-
-	if FinallySql == "" {
-		FinallySql = fmt.Sprintf("SELECT COUNT(*) as t_count FROM %v WHERE %v %v", this.tablename, this.whereStr, extraSql)
-	} else {
-		FinallySql = fmt.Sprintf("SELECT SUM(t_count) as t_count FROM (%v) temp", FinallySql)
-	}
-	this.finalSql = FinallySql
+	this.finalSql = sqlStr
 
 	var resp *DbResult = nil
 	var err error
 	if this.dbPointer != nil {
-		resp, err = this.dbPointer.Query(FinallySql)
+		resp, err = this.dbPointer.Query(sqlStr)
 	} else {
-		resp, err = Query(FinallySql, this.expire)
+		resp, err = Query(sqlStr, this.expire)
 	}
 
 	if err != nil {
@@ -436,56 +324,19 @@ func (this *SqlBuider) Count() (int32, error) {
  */
 func (this *SqlBuider) Max(_field string) (uint64, error) {
 
-	if this.tablename == "" {
-		return 0, errors.New("EMPTY TABLE NAME")
+	this.fieldStr = fmt.Sprintf("MAX(`%v`) as max_id", _field)
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return 0, buildErr
 	}
 
-	if this.whereStr == "" {
-		this.whereStr = "1"
-	}
-
-	if this.fieldStr == "" {
-		this.fieldStr = "*"
-	}
-
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += "GROUP BY "+this.group
-	}
-
-	var FinallySql = strings.Builder{}
-	if len(this.unionalls) > 0 {
-		for _, val := range this.unionalls {
-			if FinallySql.Len() > 0 {
-				FinallySql.WriteString(" UNION ALL ")
-			}
-			FinallySql.WriteString(fmt.Sprintf("SELECT Max(`%v`) as max_id FROM %v WHERE %v ", _field, val, this.whereStr))
-		}
-	} else if len(this.unions) > 0 {
-		for _, val := range this.unions {
-			if FinallySql.Len() > 0 {
-				FinallySql.WriteString( " UNION ALL " )
-			}
-			FinallySql.WriteString( fmt.Sprintf("SELECT Max(`%v`) as max_id FROM %v WHERE %v ", _field, val, this.whereStr) )
-		}
-	}
-
-	if FinallySql.Len() == 0 {
-		FinallySql.Reset()
-		FinallySql.WriteString(fmt.Sprintf("SELECT Max(`%v`) as max_id FROM %v WHERE %v %v", _field, this.tablename, this.whereStr, extraSql))
-	} else {
-		_finnal := FinallySql.String()
-		FinallySql.Reset()
-		FinallySql.WriteString(fmt.Sprintf("SELECT Max(`%v`) as max_id FROM (%v) temp", _field, _finnal))
-	}
-	this.finalSql = FinallySql.String()
-
+	this.finalSql = sqlStr
 	var resp *DbResult = nil
 	var err error
 	if this.dbPointer != nil {
-		resp, err = this.dbPointer.Query(FinallySql.String())
+		resp, err = this.dbPointer.Query(sqlStr)
 	} else {
-		resp, err = Query(FinallySql.String(), this.expire)
+		resp, err = Query(sqlStr, this.expire)
 	}
 
 	if err != nil {
@@ -504,15 +355,11 @@ func (this *SqlBuider) Max(_field string) (uint64, error) {
  */
 func (this *SqlBuider) SelectTx(tx *DbTransform) (*DbResult, error) {
 
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += "GROUP BY "+this.group
-	}
-	if this.limit != "" {
-		extraSql += this.limit
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return nil, buildErr
 	}
 
-	sqlStr := fmt.Sprintf("SELECT %v FROM %v WHERE %v %v", this.fieldStr, this.tablename, this.whereStr, extraSql)
 	this.finalSql = sqlStr
 	var resp *DbResult = nil
 	var err error
@@ -1104,6 +951,34 @@ func (this *SqlBuider) Union(tablename string) *SqlBuider {
 	return this
 }
 
+
+/**
+左内联
+@param _tableName string 表名
+@param _joinCondition string 条件
+*/
+func (this *SqlBuider) LeftJoin(_tableName string, _joinCondition string) *SqlBuider {
+	this.leftJoin = append(this.leftJoin, sqlJoin{
+		TableName:     _tableName,
+		JoinCondition: _joinCondition,
+	})
+	return this
+}
+
+
+/**
+右内联
+@param _tableName string 表名
+@param _joinCondition string 条件
+*/
+func (this *SqlBuider) RightJoin(_tableName string, _joinCondition string) *SqlBuider {
+	this.rightJoin = append(this.rightJoin, sqlJoin{
+		TableName:     _tableName,
+		JoinCondition: _joinCondition,
+	})
+	return this
+}
+
 /*
 	获取sql语句
  */
@@ -1121,27 +996,12 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 
 	_element := _valueE.Type().Elem()
 	fieldList := GetAllField(reflect.New(_element).Interface())
+	this.fieldStr = "`" + strings.Join(fieldList, "`,`") + "`"
 
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += "GROUP BY "+this.group
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return buildErr
 	}
-
-	if this.orders != "" {
-		extraSql += " ORDER BY "+this.orders
-	}
-
-	if this.limit != "" {
-		extraSql += this.limit
-	}
-
-	where_str := ""
-	if this.whereStr != "" {
-		where_str = "WHERE " + this.whereStr
-	}
-
-
-	sqlStr := fmt.Sprintf("SELECT `%v` FROM `%v`.`%v` %v %v", strings.Join(fieldList, "`,`"), this.dbname, this.tablename, where_str, extraSql)
 
 	var resp *DbResult = nil
 	var err error
@@ -1184,23 +1044,13 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 func (this *SqlBuider) FindOne(_resp interface{}) error {
 
 	fieldList := GetAllField(_resp)
+	this.fieldStr = "`" + strings.Join(fieldList, "`,`") + "`"
 
-	var extraSql = ""
-	if this.group != "" {
-		extraSql += "GROUP BY "+this.group
+
+	sqlStr, buildErr := this.buildQuerySql()
+	if buildErr != nil {
+		return buildErr
 	}
-
-	if this.limit != "" {
-		extraSql += this.limit
-	}
-
-	where_str := ""
-	if this.whereStr != "" {
-		where_str = "WHERE " + this.whereStr
-	}
-
-
-	sqlStr := fmt.Sprintf("SELECT `%v` FROM `%v`.`%v` %v %v", strings.Join(fieldList, "`,`"), this.dbname, this.tablename, where_str, extraSql)
 
 	var resp *DbResult = nil
 	var err error
@@ -1295,3 +1145,71 @@ func (this *SqlBuider) ReplaceObj(_resp interface{}, _include_primary bool) (int
 
 	return resp, nil
 }
+
+
+func (this *SqlBuider) buildQuerySql() (string, error) {
+	if this.tablename == "" {
+		return "", errors.New("EMPTY TABLE NAME")
+	}
+
+	if this.whereStr == "" {
+		this.whereStr = "1"
+	}
+
+	if this.fieldStr == "" {
+		this.fieldStr = "*"
+	}
+
+	var extraSql = ""
+	if this.group != "" {
+		extraSql += "GROUP BY "+this.group
+	}
+
+	joinStr := ""
+	var FinallySql = ""
+	if len(this.unionalls) > 0 {
+		// 使用一般联表查询
+		for _, sub := range this.unionalls {
+			if FinallySql == "" {
+				FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v UNION ALL ", this.fieldStr, this.tablename, this.whereStr, extraSql)
+			}else{
+				FinallySql += " UNION ALL "
+			}
+			FinallySql += fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v ", this.fieldStr, sub, this.whereStr, extraSql)
+		}
+	} else if len(this.unions) > 0 {
+		// 使用强制联表查询
+		for _, sub := range this.unions {
+			if FinallySql == "" {
+				FinallySql = fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v UNION ", this.fieldStr, this.tablename, this.whereStr, extraSql)
+			}else{
+				FinallySql += " UNION "
+			}
+			FinallySql += fmt.Sprintf("SELECT %v FROM %v WHERE ( %v ) %v ", this.fieldStr, sub, this.whereStr, extraSql)
+		}
+	} else {
+
+		for _, val := range this.leftJoin {
+			joinStr += fmt.Sprintf(" LEFT JION %v ON (%v)", val.TableName, val.JoinCondition)
+		}
+		for _, val := range this.rightJoin {
+			joinStr += fmt.Sprintf(" RIGHT JION %v ON (%v)", val.TableName, val.JoinCondition)
+		}
+	}
+
+	if this.orders != "" {
+		extraSql += " ORDER BY "+this.orders
+	}
+
+	if this.limit != "" {
+		extraSql += this.limit
+	}
+
+	if FinallySql == "" {
+		FinallySql = fmt.Sprintf("SELECT %v FROM %v %v WHERE ( %v ) %v", this.fieldStr, this.tablename, joinStr, this.whereStr, extraSql)
+	} else {
+		FinallySql = fmt.Sprintf("SELECT %v FROM ( %v ) temp %v", this.fieldStr, FinallySql, extraSql)
+	}
+	return FinallySql, nil
+}
+
