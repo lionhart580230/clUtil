@@ -1045,7 +1045,7 @@ func (this *SqlBuider) FindOne(_resp interface{}) error {
 
 	fieldList := GetAllField(_resp)
 	this.fieldStr = "`" + strings.Join(fieldList, "`,`") + "`"
-
+	this.limit = "LIMIT 1"
 
 	sqlStr, buildErr := this.buildQuerySql()
 	if buildErr != nil {
