@@ -283,12 +283,14 @@ func (this *ClHttpClient) Do() (*Response, error) {
 				}
 				body = strings.NewReader(urlData.Encode())
 			}
+		} else {
+			http_url = this.BuildParamList()
 		}
 	} else {
 		body = strings.NewReader(this.body)
 	}
 
-	http_url = this.BuildParamList()
+
 
 	req, err := http.NewRequest(this.method, http_url, body)
 	if err != nil {

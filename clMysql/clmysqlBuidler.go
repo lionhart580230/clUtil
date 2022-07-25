@@ -1190,10 +1190,10 @@ func (this *SqlBuider) buildQuerySql() (string, error) {
 	} else {
 
 		for _, val := range this.leftJoin {
-			joinStr += fmt.Sprintf(" LEFT JION %v ON (%v)", val.TableName, val.JoinCondition)
+			joinStr += fmt.Sprintf(" LEFT JOIN %v ON (%v)", val.TableName, val.JoinCondition)
 		}
 		for _, val := range this.rightJoin {
-			joinStr += fmt.Sprintf(" RIGHT JION %v ON (%v)", val.TableName, val.JoinCondition)
+			joinStr += fmt.Sprintf(" RIGHT JOIN %v ON (%v)", val.TableName, val.JoinCondition)
 		}
 	}
 
