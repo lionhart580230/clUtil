@@ -1,6 +1,7 @@
 package clConfig
 
 import (
+	"github.com/xiaolan580230/clUtil/clLog"
 	"github.com/xiaolan580230/clUtil/clSuperMap"
 	"io/ioutil"
 	"os"
@@ -8,19 +9,30 @@ import (
 	"strings"
 )
 
-var mConfig *clSuperMap.SuperMap
-
+var mConfig map[string] *clSuperMap.SuperMap
+var aConfig map[string] []string
 func init() {
-	mConfig = clSuperMap.NewSuperMap()
+	mConfig = make(map[string] *clSuperMap.SuperMap)
+	aConfig = make(map[string] []string)
 }
 
 
 // 通过文件加载配置
 // 调用多次后面的会覆盖前面
-func LoadFromFile(_filename string) {
+// @Param _filename 配置文件所在路径
+// @Param _overWrite 是否覆盖之前读取的内容， true为覆盖，反之不覆盖
+func LoadFromFile(_filename string, _overWrite bool) error {
 	buffer, err := ioutil.ReadFile(_filename)
 	if err != nil {
-		return
+		return err
+	}
+
+	section := "global"
+	if _overWrite {
+		mConfig = make(map[string] *clSuperMap.SuperMap)
+		mConfig[section] = clSuperMap.NewSuperMap()
+		aConfig = make(map[string] []string)
+		aConfig[section] = make([]string, 0)
 	}
 
 	var confLines = strings.Split(string(buffer), "\n")
@@ -29,12 +41,24 @@ func LoadFromFile(_filename string) {
 		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, "//") || strings.HasPrefix(line, "--") {
 			continue
 		}
-		idx := strings.Index(line, "=")
-		if idx <= 0 {
+
+		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+			section = strings.TrimPrefix(strings.TrimSuffix(line,"]"),"[")
+			mConfig[section] = clSuperMap.NewSuperMap()
+			aConfig[section] = make([]string, 0)
 			continue
 		}
-		mConfig.Add(line[:idx], line[idx+1:])
+
+		idx := strings.Index(line, "=")
+		if idx <= 0 {
+			// 可能是数组
+			aConfig[section] = append(aConfig[section], line)
+			continue
+		}
+		clLog.Info("section: %v key: %v, val: %v", section, line[:idx], line[idx+1:])
+		mConfig[section].Add(line[:idx], line[idx+1:])
 	}
+	return nil
 }
 
 
@@ -48,7 +72,15 @@ func GetUint32(_key string, _def uint32) uint32 {
 		}
 		return uint32(v)
 	}
-	return mConfig.GetUInt32(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetUInt32(_key[idx+1:], _def)
 }
 
 
@@ -61,7 +93,15 @@ func GetUint64(_key string, _def uint64) uint64 {
 		}
 		return uint64(v)
 	}
-	return mConfig.GetUInt64(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetUInt64(_key, _def)
 }
 
 
@@ -74,7 +114,15 @@ func GetInt32(_key string, _def int32) int32 {
 		}
 		return int32(v)
 	}
-	return mConfig.GetInt32(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetInt32(_key, _def)
 }
 
 
@@ -87,7 +135,15 @@ func GetInt64(_key string, _def int64) int64 {
 		}
 		return int64(v)
 	}
-	return mConfig.GetInt64(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetInt64(_key, _def)
 }
 
 
@@ -100,7 +156,15 @@ func GetBool(_key string, _def bool) bool {
 		}
 		return v
 	}
-	return mConfig.GetBool(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetBool(_key, _def)
 }
 
 
@@ -109,7 +173,16 @@ func GetStr(_key string, _def string) string {
 	if os.Getenv(_key) != "" {
 		return os.Getenv(_key)
 	}
-	return mConfig.GetStr(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+
+		return _def
+	}
+	return configItem.GetStr(_key[idx+1:], _def)
 }
 
 
@@ -122,7 +195,15 @@ func GetFloat32(_key string, _def float32) float32 {
 		}
 		return float32(v)
 	}
-	return mConfig.GetFloat32(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetFloat32(_key, _def)
 }
 
 
@@ -135,6 +216,24 @@ func GetFloat64(_key string, _def float64) float64 {
 		}
 		return v
 	}
-	return mConfig.GetFloat64(_key, _def)
+	idx := strings.Index(_key, ".")
+	if idx <= 0 {
+		return _def
+	}
+	configItem, exists := mConfig[_key[:idx]]
+	if !exists {
+		return _def
+	}
+	return configItem.GetFloat64(_key, _def)
+}
+
+
+// 获取Arr配置
+func GetStrArray(_key string) []string {
+	configItem, exists := aConfig[_key]
+	if !exists {
+		return []string{}
+	}
+	return configItem
 }
 
