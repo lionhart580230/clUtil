@@ -1202,7 +1202,7 @@ func (this *SqlBuider) buildQuerySql() (string, error) {
 	}
 
 	if this.limit != "" {
-		extraSql += this.limit
+		extraSql += " " + this.limit
 	}
 
 	if FinallySql == "" {
