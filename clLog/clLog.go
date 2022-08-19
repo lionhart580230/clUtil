@@ -9,6 +9,7 @@ import (
 )
 
 var logFlag uint32 = LogFlagAll
+var logMode uint32 = LogModeConsole
 var version string = ""
 var showTime bool = true
 const (
@@ -30,6 +31,18 @@ const (
 	LogColorWhite
 )
 
+const (
+	// 控制台模式，会带有颜色区分
+	LogModeConsole = 0
+	// 原生模式，不带任何颜色信息
+	LogModeRaw = 1
+)
+
+
+// 设置日志输出模式
+func SetLogMode(_flag uint32) {
+	logMode = _flag
+}
 
 // 设置日志输出掩码
 func SetLogFlag(_flag uint32) {
@@ -45,6 +58,7 @@ func SetVersion(_version string) {
 func SetShowTime(_show bool) {
 	showTime = _show
 }
+
 
 // 输出Info日志
 func Info(_fmt string, _args ...interface{}) {
@@ -106,16 +120,24 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 		logContent += " " + version
 	}
 	logContent += " " + debugFile
+	color := LogColorWhite
 	switch _type {
 	case LogFlagInfo:
 		logContent += "[Info]"
 	case LogFlagWarning:
 		logContent += "[Warn]"
+		color = LogColorYellow
 	case LogFlagError:
 		logContent += "[Err]"
+		color = LogColorOrange
 	case LogFlagDebug:
 		logContent += "[Debug]"
+		color = LogColorMagenta
 	}
 
+	if logMode == LogModeConsole {
+		fmt.Printf("\x1b[0;%dm%v\x1b[0m\n", color, logContent + " " + content)
+		return
+	}
 	fmt.Println(logContent + " " + content)
 }
