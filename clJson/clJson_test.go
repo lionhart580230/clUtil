@@ -6,13 +6,15 @@ import (
 )
 
 func TestCreateBy(t *testing.T) {
-
-	jsonObj := New([]byte( `{"a":1000, "b":2}` ))
+	jsonstr := `{
+	"ac": "getSystemInfo"
+}`
+	jsonObj := New([]byte(jsonstr))
 	if jsonObj == nil {
 		fmt.Printf("jsonObj解析错误!\n")
 		return
 	}
-	fmt.Printf(">> a的值: %v\n", jsonObj.GetInt32("a"))
+	fmt.Printf(">> ac的值: %v\n", jsonObj.GetStr("ac"))
 }
 
 

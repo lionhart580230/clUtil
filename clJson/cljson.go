@@ -18,6 +18,7 @@ type A []interface{}
 func New(bs []byte) *JsonStream {
 	var js JsonStream
 	js.data = bs
+	js.data = bytes.Replace(js.data, []byte{9}, []byte{}, -1)		// 去除tab
 	js.data = bytes.Replace(js.data, []byte{10}, []byte{}, -1)		// 去除tab
 	js.data = bytes.Replace(js.data, []byte{13}, []byte{}, -1)		// 去除tab
 	js.dataLength = uint32(len(js.data))
@@ -268,7 +269,6 @@ func (js *JsonStream) IsValidMap() bool {
 					vtype := JSON_TYPE_NIL
 					vtype, lastVal = checkType([]byte(lastVal))
 					if vtype == JSON_TYPE_NIL {
-
 						return false
 					}
 
@@ -394,7 +394,6 @@ func (js *JsonStream) IsValidJson() bool {
 	}
 
 	end := js.data[js.dataLength-1]
-
 	if js.data[0] == '[' && end == ']' {
 		js.dataType = JSON_TYPE_ARR
 		return js.IsValidArray()
