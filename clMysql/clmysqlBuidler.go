@@ -994,8 +994,8 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 	_valueE := _value.Elem()
 	_valueE = _valueE.Slice(0, _valueE.Cap())
 
+	_element := _valueE.Type().Elem()
 	if this.fieldStr == "" {
-		_element := _valueE.Type().Elem()
 		fieldList := GetAllField(reflect.New(_element).Interface())
 		this.fieldStr = "`" + strings.Join(fieldList, "`,`") + "`"
 	}
@@ -1045,8 +1045,10 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 // 获取查找
 func (this *SqlBuider) FindOne(_resp interface{}) error {
 
-	fieldList := GetAllField(_resp)
-	this.fieldStr = "`" + strings.Join(fieldList, "`,`") + "`"
+	if this.fieldStr == "" {
+		fieldList := GetAllField(_resp)
+		this.fieldStr = "`" + strings.Join(fieldList, "`,`") + "`"
+	}
 	this.limit = "LIMIT 1"
 
 	sqlStr, buildErr := this.buildQuerySql()
