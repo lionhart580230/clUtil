@@ -119,3 +119,30 @@ func AesCBCEncode(_buffer string, _key string, iv string) string {
 	fmt.Printf("加密: %v\n", origData)
 	return Base64Encode(origData)
 }
+
+
+func Aes256GCMDecode(_aesKey string, _ciphertext string, _nonce string, _associatedData string) string {
+		// The key argument should be the AES key, either 16 or 32 bytes
+		// to select AES-128 or AES-256.
+		key := []byte(_aesKey)
+		ciphertext := Base64Decode(_ciphertext)
+
+		nonce := []byte(_nonce)
+
+		block, err := aes.NewCipher(key)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		aesgcm, err := cipher.NewGCM(block)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		plaintext, err := aesgcm.Open(nil, nonce, ciphertext, []byte(_associatedData))
+		if err != nil {
+			panic(err.Error())
+		}
+
+		return string(plaintext)
+}
