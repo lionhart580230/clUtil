@@ -220,3 +220,17 @@ func GenUserUid() uint64 {
 }
 
 
+
+//@author xiaolan
+//@lastUpdate 2022-09-04
+//@comment 生成随机字符串
+func GenNonceStr(_bits int) string {
+	str := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	strLen := int64(len(str))
+	sum := ""
+	for i := 0; i < _bits; i++ {
+		idx := RandInt(0, strLen)
+		sum += string ( str[ int(idx) ])
+	}
+	return sum
+}

@@ -287,6 +287,7 @@ func (this *ClHttpClient) Do() (*Response, error) {
 			http_url = this.BuildParamList()
 		}
 	} else {
+		http_url = this.BuildParamList()
 		body = strings.NewReader(this.body)
 	}
 
