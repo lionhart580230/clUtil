@@ -1,12 +1,11 @@
 package clMysql
 
 import (
+	"fmt"
 	"github.com/xiaolan580230/clUtil/clSuperMap"
 	"reflect"
 	"strings"
-	"fmt"
 )
-
 
 // 根据数据结构取得字段列表
 func GetAllField(_val interface{}) []string {
@@ -15,6 +14,19 @@ func GetAllField(_val interface{}) []string {
 	_type := reflect.TypeOf(_val).Elem()
 
 	for i := 0; i < _type.NumField(); i++ {
+		if _type.Field(i).Anonymous {
+			// 匿名字段,说明是嵌套的结构
+			reflectValue := reflect.ValueOf(_val)
+			t := reflectValue.Elem().Field(i).Type()
+			for j := 0; j < t.Elem().NumField(); j++ {
+				fieldName := t.Elem().Field(j).Tag.Get("db")
+				if fieldName == "" || fieldName == "-" {
+					continue
+				}
+				_fields = append(_fields, fieldName)
+			}
+			continue
+		}
 		fieldName := _type.Field(i).Tag.Get("db")
 		if fieldName == "" || fieldName == "-" {
 			continue
@@ -24,7 +36,6 @@ func GetAllField(_val interface{}) []string {
 	return _fields
 }
 
-
 // 将数据反序列化为一个对象
 func Unmarsha(_row *clSuperMap.SuperMap, _inter interface{}) {
 
@@ -32,30 +43,57 @@ func Unmarsha(_row *clSuperMap.SuperMap, _inter interface{}) {
 	_value := reflect.ValueOf(_inter)
 	_valueE := _value.Elem()
 	for i := 0; i < _value.Elem().NumField(); i++ {
-
-		field_name := _type.Elem().Field(i).Tag.Get("db")
-
-		switch _type.Elem().Field(i).Type.String() {
-		case "uint32":
-			_valueE.Field(i).SetUint(uint64(_row.GetUInt32(field_name, 0)))
-		case "uint64":
-			_valueE.Field(i).SetUint(_row.GetUInt64(field_name, 0))
-		case "int32":
-			_valueE.Field(i).SetInt(int64(_row.GetInt32(field_name, 0)))
-		case "int64":
-			_valueE.Field(i).SetInt(_row.GetInt64(field_name, 0))
-		case "string":
-			_valueE.Field(i).SetString(_row.GetStr(field_name, ""))
-		case "bool":
-			_valueE.Field(i).SetBool(_row.GetBool(field_name, false))
-		case "float32":
-			_valueE.Field(i).SetFloat(float64(_row.GetFloat32(field_name, 0)))
-		case "float64":
-			_valueE.Field(i).SetFloat(_row.GetFloat64(field_name, 0))
+		if _type.Elem().Field(i).Anonymous {
+			t := _value.Elem().Field(i)
+			for j := 0; j < _value.Elem().Field(i).NumField(); j++ {
+				setValue(t.Type().Field(j), _value.Elem().Field(i).Field(j), _row)
+			}
+			continue
 		}
+		//field_name := _type.Elem().Field(i).Tag.Get("db")
+		setValue(_type.Elem().Field(i), _valueE.Field(i), _row)
+		//switch _type.Elem().Field(i).Type.String() {
+		//case "uint32":
+		//	_valueE.Field(i).SetUint(uint64(_row.GetUInt32(field_name, 0)))
+		//case "uint64":
+		//	_valueE.Field(i).SetUint(_row.GetUInt64(field_name, 0))
+		//case "int32":
+		//	_valueE.Field(i).SetInt(int64(_row.GetInt32(field_name, 0)))
+		//case "int64":
+		//	_valueE.Field(i).SetInt(_row.GetInt64(field_name, 0))
+		//case "string":
+		//	_valueE.Field(i).SetString(_row.GetStr(field_name, ""))
+		//case "bool":
+		//	_valueE.Field(i).SetBool(_row.GetBool(field_name, false))
+		//case "float32":
+		//	_valueE.Field(i).SetFloat(float64(_row.GetFloat32(field_name, 0)))
+		//case "float64":
+		//	_valueE.Field(i).SetFloat(_row.GetFloat64(field_name, 0))
+		//}
 	}
 }
 
+func setValue(_type reflect.StructField, _valueE reflect.Value, _row *clSuperMap.SuperMap) {
+	field_name := _type.Tag.Get("db")
+	switch _valueE.Type().String() {
+	case "uint32":
+		_valueE.SetUint(uint64(_row.GetUInt32(field_name, 0)))
+	case "uint64":
+		_valueE.SetUint(_row.GetUInt64(field_name, 0))
+	case "int32":
+		_valueE.SetInt(int64(_row.GetInt32(field_name, 0)))
+	case "int64":
+		_valueE.SetInt(_row.GetInt64(field_name, 0))
+	case "string":
+		_valueE.SetString(_row.GetStr(field_name, ""))
+	case "bool":
+		_valueE.SetBool(_row.GetBool(field_name, false))
+	case "float32":
+		_valueE.SetFloat(float64(_row.GetFloat32(field_name, 0)))
+	case "float64":
+		_valueE.SetFloat(_row.GetFloat64(field_name, 0))
+	}
+}
 
 // 根据数据结构取得字段列表
 func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
