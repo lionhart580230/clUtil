@@ -16,12 +16,16 @@ func GetAllField(_val interface{}) []string {
 	for i := 0; i < _type.NumField(); i++ {
 		if _type.Field(i).Anonymous {
 			// 匿名字段,说明是嵌套的结构
-			reflectValue := reflect.ValueOf(_val)
-			t := reflectValue.Elem().Field(i).Type()
-			for j := 0; j < t.Elem().NumField(); j++ {
-				fieldName := t.Elem().Field(j).Tag.Get("db")
+			_value := reflect.ValueOf(_val)
+			t := _value.Elem().Field(i)
+			for j := 0; j < _value.Elem().Field(i).NumField(); j++ {
+				fieldName := t.Type().Field(j).Tag.Get("db")
 				if fieldName == "" || fieldName == "-" {
 					continue
+				}
+				alias := t.Type().Field(j).Tag.Get("alias")
+				if alias != "" {
+					fieldName = fmt.Sprintf("%v`.`%v", alias, fieldName)
 				}
 				_fields = append(_fields, fieldName)
 			}
