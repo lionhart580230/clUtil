@@ -234,3 +234,36 @@ func GenNonceStr(_bits int) string {
 	}
 	return sum
 }
+
+
+// 下划线转驼峰法
+// @param _firstIsUpper 第一个字母是否转化为大写
+// @param _val 需要转化的字符串
+func UnderlineToUppercase(_firstIsUpper bool, _val string) string {
+	var newVal = strings.Builder{}
+	var isUnderLine = false
+
+	for i, v := range _val {
+		if i == 0 {
+			if _firstIsUpper {
+				newVal.WriteString(strings.ToUpper(string(v)))
+			} else {
+				newVal.WriteString(strings.ToLower(string(v)))
+			}
+			continue
+		}
+
+		if v == '_' {
+			isUnderLine = true
+			continue
+		} else {
+			if isUnderLine  {
+				newVal.WriteString(strings.ToUpper(string(v)))
+				isUnderLine = false
+			} else {
+				newVal.WriteString(string(v))
+			}
+		}
+	}
+	return newVal.String()
+}

@@ -114,6 +114,10 @@ func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
 
 	for i := 0; i < _type.NumField(); i++ {
 
+		if _type.Field(i).Name[0] >= 97 {
+			continue	// 小写的过滤掉
+		}
+
 		if !_primary {
 			if strings.ToUpper(_type.Field(i).Tag.Get("primary")) == "TRUE" {
 				continue
@@ -128,4 +132,41 @@ func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
 		_values = append(_values, fmt.Sprintf("%v", _value.Field(i).Interface()))
 	}
 	return _fields, _values
+}
+
+
+// 根据数据结构取得字段列表
+func GetUpdateSql(_val interface{}, _primary bool) []string {
+
+	_fields := make([]string, 0)
+
+	_type := reflect.TypeOf(_val)
+	_value := reflect.ValueOf(_val)
+
+	for i := 0; i < _type.NumField(); i++ {
+
+		if _type.Field(i).Name[0] >= 97 {
+			continue	// 小写的过滤掉
+		}
+
+		if !_primary {
+			if strings.ToUpper(_type.Field(i).Tag.Get("primary")) == "TRUE" {
+				continue
+			}
+		}
+
+		var fileName = _type.Field(i).Tag.Get("db")
+		var fieldValue = _value.Field(i).Interface()
+
+		if fileName == "" {
+			continue
+		}
+
+		if _type.Field(i).Tag.Get("db") == "" {
+			continue
+		}
+
+		_fields = append(_fields, fmt.Sprintf("`%v` = '%v'", fileName, fieldValue) )
+	}
+	return _fields
 }
