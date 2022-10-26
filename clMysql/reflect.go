@@ -35,6 +35,10 @@ func GetAllField(_val interface{}) []string {
 		if fieldName == "" || fieldName == "-" {
 			continue
 		}
+		alias := _type.Field(i).Tag.Get("alias")
+		if alias != "" {
+			fieldName = fmt.Sprintf("%v`.`%v", alias, fieldName)
+		}
 		_fields = append(_fields, fieldName)
 	}
 	return _fields
