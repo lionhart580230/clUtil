@@ -200,6 +200,18 @@ func (this *SqlBuider) Limit(min int32, count int32) *SqlBuider {
 	return this
 }
 
+
+/**
+  设置LIMIT限制
+  @param min int32 设置limit的最小值
+  @param count int32 设置limit的数量
+*/
+func (this *SqlBuider) Page(page int32, count int32) *SqlBuider {
+	this.limit = fmt.Sprintf(" LIMIT %v, %v", page * count, count)
+	return this
+}
+
+
 /**
 设置DB名字
 @param dbname string 设置DB名字
@@ -400,6 +412,33 @@ func (this *SqlBuider) Save(data map[string]interface{}) (int64, error) {
 		resp, err = this.dbTx.ExecTx(sqlStr)
 	}
 	return resp, err
+}
+
+
+// 基于对象的修改
+func (this *SqlBuider) SaveObj(_resp interface{}) (int64, error) {
+
+	fieldList := GetUpdateSql(_resp, false)
+
+	sqlStr := fmt.Sprintf("UPDATE `%v`.`%v` SET %v WHERE %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), this.whereStr)
+
+	var resp int64
+	var err error
+
+	switch this.dbType {
+	case 0:		// 正常
+		resp, err = Exec(sqlStr, 0)
+	case 1:		// Picker
+		resp, err = this.dbPointer.Exec(sqlStr)
+	case 2:		// 事务
+		resp, err = this.dbTx.ExecTx(sqlStr)
+	}
+
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("%v SQL(%v)", err, sqlStr))
+	}
+
+	return resp, nil
 }
 
 /**

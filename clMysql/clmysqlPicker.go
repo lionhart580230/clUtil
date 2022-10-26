@@ -319,3 +319,39 @@ func (this *DBPointer) HasTable(tablename string) (bool) {
 	}
 	return false
 }
+
+
+/**
+  获取表格信息
+*/
+type DBColumnInfo struct {
+	Field string
+	Type string
+	IsNull bool
+	KeyType string
+	Default string
+	Extra string
+}
+func (this *DBPointer) GetTableColumns(tablename string) ([]DBColumnInfo, error) {
+
+	res, err := this.Query("DESC %v", tablename)
+	if err != nil {
+		return nil, err
+	}
+	if res == nil || res.Length == 0 {
+		return nil, nil
+	}
+
+	columnList := make([]DBColumnInfo, 0)
+	for _, val := range res.ArrResult{
+		columnList = append(columnList, DBColumnInfo{
+			Field:   val.GetStr("Field", ""),
+			Type:    val.GetStr("Type", ""),
+			IsNull:  val.GetStr("Null", "") == "YES",
+			KeyType: val.GetStr("Key", ""),
+			Default: val.GetStr("Default", ""),
+			Extra:   val.GetStr("Extra", ""),
+		})
+	}
+	return columnList, nil
+}
