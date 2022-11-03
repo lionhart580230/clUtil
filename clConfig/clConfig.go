@@ -101,7 +101,7 @@ func GetUint64(_key string, _def uint64) uint64 {
 	if !exists {
 		return _def
 	}
-	return configItem.GetUInt64(_key, _def)
+	return configItem.GetUInt64(_key[idx+1:], _def)
 }
 
 
@@ -122,7 +122,7 @@ func GetInt32(_key string, _def int32) int32 {
 	if !exists {
 		return _def
 	}
-	return configItem.GetInt32(_key, _def)
+	return configItem.GetInt32(_key[idx+1:], _def)
 }
 
 
@@ -143,7 +143,7 @@ func GetInt64(_key string, _def int64) int64 {
 	if !exists {
 		return _def
 	}
-	return configItem.GetInt64(_key, _def)
+	return configItem.GetInt64(_key[idx+1:], _def)
 }
 
 
@@ -164,7 +164,7 @@ func GetBool(_key string, _def bool) bool {
 	if !exists {
 		return _def
 	}
-	return configItem.GetBool(_key, _def)
+	return configItem.GetBool(_key[idx+1:], _def)
 }
 
 
@@ -203,7 +203,7 @@ func GetFloat32(_key string, _def float32) float32 {
 	if !exists {
 		return _def
 	}
-	return configItem.GetFloat32(_key, _def)
+	return configItem.GetFloat32(_key[idx+1:], _def)
 }
 
 
@@ -224,7 +224,7 @@ func GetFloat64(_key string, _def float64) float64 {
 	if !exists {
 		return _def
 	}
-	return configItem.GetFloat64(_key, _def)
+	return configItem.GetFloat64(_key[idx+1:], _def)
 }
 
 
@@ -237,3 +237,12 @@ func GetStrArray(_key string) []string {
 	return configItem
 }
 
+
+// 获取Arr配置
+func GetMap(_key string) map[string]string {
+	configItem, exists := mConfig[_key]
+	if !exists {
+		return map[string]string{}
+	}
+	return configItem.GetMap()
+}
