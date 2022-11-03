@@ -71,6 +71,18 @@ func GetFileName(_path string) string {
 }
 
 
+// 获取文件名
+func GetFileSize(_path string) int64 {
+	fileInfo, err := os.Stat(_path)
+	if err != nil {
+		fmt.Printf("获取文件: %v 名失败! 错误:%v", _path, err)
+		return 0
+	}
+	return fileInfo.Size()
+}
+
+
+
 // 获取文件MD5值
 func GetFileMD5(_path string) string {
 	content, err := ioutil.ReadFile(_path)
