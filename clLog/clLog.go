@@ -2,6 +2,7 @@ package clLog
 
 import (
 	"fmt"
+	"github.com/xiaolan580230/clUtil/clFile"
 	"github.com/xiaolan580230/clUtil/clTime"
 	"runtime"
 	"strings"
@@ -12,6 +13,7 @@ var logFlag uint32 = LogFlagAll
 var logMode uint32 = LogModeConsole
 var version string = ""
 var showTime bool = true
+var logFilePath string = ""
 const (
 	LogFlagInfo = 1 << 0
 	LogFlagDebug = 1 << 1
@@ -57,6 +59,11 @@ func SetVersion(_version string) {
 // 设置时间
 func SetShowTime(_show bool) {
 	showTime = _show
+}
+
+// 设置日志文件名
+func SetLogFileName(_name string) {
+	logFilePath = _name
 }
 
 
@@ -140,4 +147,7 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 		return
 	}
 	fmt.Println(logContent + " " + content)
+	if logFilePath != "" {
+		clFile.AppendFile(logFilePath, logContent + " " + content)
+	}
 }
