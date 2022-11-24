@@ -137,9 +137,9 @@ func (this *ClHttpClient) SetBody(_body string) {
 
 // 设置请求类型
 func (this *ClHttpClient) SetContentType(_type uint32) {
-	if _type == ContentJson {
-		this.method = "POST"
-	}
+	//if _type == ContentJson {
+	//	this.method = "POST"
+	//}
 	this.contentType = _type
 }
 
@@ -249,7 +249,7 @@ func (this *ClHttpClient) Do() (*Response, error) {
 	var http_url = ""
 	var body io.Reader = nil
 	if this.body == "" {
-		if this.method == "POST" {
+		if this.method != "GET" {
 			http_url = this.url
 			if this.contentType == ContentTypeForm {
 				var r = http.Request{}
@@ -292,7 +292,6 @@ func (this *ClHttpClient) Do() (*Response, error) {
 	}
 
 
-
 	req, err := http.NewRequest(this.method, http_url, body)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("HttpProxy: %v 请求地址: %v 错误:%v", this.proxy, http_url, err))
@@ -330,4 +329,10 @@ func (this *ClHttpClient) Do() (*Response, error) {
 		return nil, errors.New(fmt.Sprintf("HttpProxy: %v 请求地址: %v 错误:%v", this.proxy, http_url, err))
 	}
 	return resp, nil
+}
+
+
+// 获取当前地址
+func (this *ClHttpClient) GetUrl() string {
+	return this.url
 }

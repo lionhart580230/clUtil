@@ -92,7 +92,7 @@ func getNowTime(_date string) *time.Time {
 	nowTime := time.Now()
 	if _date != "" {
 		var err error
-		loc, errLoc := time.LoadLocation("Asia/Taipei")
+		loc, errLoc := time.LoadLocation("Asia/Shanghai")
 		if errLoc != nil {
 			fmt.Printf("LoadLocation error: %v\n", err)
 			return nil
@@ -105,7 +105,7 @@ func getNowTime(_date string) *time.Time {
 		return &nowTime
 	}
 
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		fmt.Printf("LoadLocation error: %v\n", err)
 		return nil
@@ -117,7 +117,7 @@ func getNowTime(_date string) *time.Time {
 
 func getTargetTime(timestamp uint32) *time.Time {
 	utc := time.Unix(int64(timestamp), 0)
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		return nil
 	}
@@ -128,7 +128,7 @@ func getTargetTime(timestamp uint32) *time.Time {
 
 // 获取指定时间日期的时间戳
 func GetTimeStamp(date string) uint32 {
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		return 0
 	}
@@ -139,7 +139,7 @@ func GetTimeStamp(date string) uint32 {
 
 //指定格式获取日期的时间戳
 func GetTimeStamp2(date string,format string) uint32 {
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		return 0
 	}
@@ -152,7 +152,7 @@ func GetTimeStamp2(date string,format string) uint32 {
 
 // 获取指定时间日期的时间戳單位為 milisecond
 func GetTimeStampWithMSec(date string) uint64 {
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		return 0
 	}
@@ -163,7 +163,7 @@ func GetTimeStampWithMSec(date string) uint64 {
 // 获取指定时间戳的日期格式
 func GetDate(timestamp uint32) string {
 	utc := time.Unix(int64(timestamp), 0)
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		return "1970-01-01 00:00:00"
 	}
@@ -178,7 +178,7 @@ func GetDateByFormat(timestamp uint32, format string) string {
 		utc = time.Unix(int64(timestamp), 0)
 	}
 
-	loc, err := time.LoadLocation("Asia/Taipei")
+	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		return ""
 	}
