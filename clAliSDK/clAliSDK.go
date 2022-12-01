@@ -45,6 +45,7 @@ func GlobalSigned(_param Map, _secretKey string) Map {
 
 	StringToSign := URIEncode(paramStr.String())
 	StringToSign = "GET&%2F&" + StringToSign
+	//clLog.Debug("string to sign: %v", StringToSign)
 	mac := hmac.New(sha1.New, []byte(_secretKey + "&"))
 	mac.Write([]byte( StringToSign ))
 	_param["Signature"] = URIEncode(clCrypt.Base64Encode(mac.Sum(nil)))

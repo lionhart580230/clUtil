@@ -83,6 +83,19 @@ func (this *DBPointer) NewBuilder() *SqlBuider {
 }
 
 // 使用DBPointer进行构建器创建
+func (this *DBPointer) NewBuilderByTable(_tableName string) *SqlBuider {
+
+	sqlbuild := SqlBuider{
+		dbPointer: this,
+		dbType:    1,
+		dbname:    this.Dbname,
+		leftJoin:  make([]sqlJoin, 0),
+		rightJoin: make([]sqlJoin, 0),
+	}
+	return sqlbuild.Table(_tableName)
+}
+
+// 使用DBPointer进行构建器创建
 func (this *DBPointer) BuilderForTable(_tableName string) *SqlBuider {
 
 	sqlbuild := SqlBuider{
@@ -420,22 +433,22 @@ func (this *SqlBuider) SaveObj(_resp interface{}) (int64, error) {
 
 	fieldList := GetUpdateSql(_resp, false)
 
-	sqlStr := fmt.Sprintf("UPDATE `%v`.`%v` SET %v WHERE %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), this.whereStr)
+	this.finalSql = fmt.Sprintf("UPDATE `%v`.`%v` SET %v WHERE %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), this.whereStr)
 
 	var resp int64
 	var err error
 
 	switch this.dbType {
 	case 0:		// 正常
-		resp, err = Exec(sqlStr, 0)
+		resp, err = Exec(this.finalSql, 0)
 	case 1:		// Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
+		resp, err = this.dbPointer.Exec(this.finalSql)
 	case 2:		// 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
+		resp, err = this.dbTx.ExecTx(this.finalSql)
 	}
 
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("%v SQL(%v)", err, sqlStr))
+		return 0, err
 	}
 
 	return resp, nil
@@ -521,10 +534,12 @@ func (this *SqlBuider) Truncate() error {
 
 	var err error
 
+	this.finalSql = fmt.Sprintf("TRUNCATE TABLE %v", this.tablename)
+
 	if this.dbPointer != nil {
-		_, err = this.dbPointer.Exec("TRUNCATE TABLE %v", this.tablename)
+		_, err = this.dbPointer.Exec(this.finalSql)
 	} else {
-		_, err = Exec("TRUNCATE TABLE %v", this.tablename)
+		_, err = Exec(this.finalSql)
 	}
 
 	return err
@@ -1012,6 +1027,8 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 		return buildErr
 	}
 
+	this.finalSql = sqlStr
+
 	var resp *DbResult = nil
 	var err error
 
@@ -1062,6 +1079,8 @@ func (this *SqlBuider) FindOne(_resp interface{}) error {
 		return buildErr
 	}
 
+	this.finalSql = sqlStr
+
 	var resp *DbResult = nil
 	var err error
 
@@ -1105,6 +1124,7 @@ func (this *SqlBuider) AddObj(_resp interface{}, _include_primary bool) (int64, 
 
 	sqlStr := fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES('%v') %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, "','"), onDuplicateStr.String())
 
+	this.finalSql = sqlStr
 	var resp int64
 	var err error
 
@@ -1130,6 +1150,7 @@ func (this *SqlBuider) ReplaceObj(_resp interface{}, _include_primary bool) (int
 	fieldList, valuesList := GetInsertSql(_resp, _include_primary)
 
 	sqlStr := fmt.Sprintf("REPLACE INTO `%v`.`%v` (`%v`) VALUES('%v')", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, "','"))
+	this.finalSql = sqlStr
 
 	var resp int64
 	var err error

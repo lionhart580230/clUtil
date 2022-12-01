@@ -1,8 +1,8 @@
 package clTime
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestNew(t *testing.T) {
@@ -48,4 +48,16 @@ func TestNew(t *testing.T) {
 
 func TestGetTimeStamp2(t *testing.T) {
 	fmt.Printf("时间戳: %v", GetTimeStamp2("2021/09/14", "2006/01/02"))
+}
+
+
+func TestGetTimeStamp(t *testing.T) {
+	now := uint32(1668186140)
+	ct, _ := NewTime(now)
+	today := GetDateByFormat(now, "2006-01-02")
+	fmt.Printf("today: %v\n", today)
+	time2 := GetTimeStamp(today + " 02:00:00") // 今天02:00的时间
+	fmt.Printf("当前:%v - 02:00[%v]\n", ct.TimeStamp, time2)
+	fmt.Printf("时间差: %v", int64(ct.TimeStamp) - int64(now))
+	//fmt.Printf("2022-10-11 00:00:00 时间戳: %v", GetTimeStamp("2022-10-11 00:00:00"))
 }
