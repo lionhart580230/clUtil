@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/xiaolan580230/clUtil/clJson"
+	"github.com/xiaolan580230/clUtil/clLog"
 	"strings"
 	"sync"
 	"time"
@@ -373,12 +374,9 @@ func checkRedisValidMap(keys string, targetData *redis.StringStringMapCmd) map[s
 // 检验redis缓存是否有效
 // @param keys string redis缓存的键名
 // @param targetData *StringCmd 目标数据
-func checkRedisValid(keys string, targetData *redis.StringCmd) string {
-	if targetData == nil || targetData.Val() == "" {
-		return ""
-	}
+func checkStringValid(keys string, _targetStr string) string {
 
-	js := clJson.New([]byte(targetData.Val()))
+	js := clJson.New([]byte(_targetStr))
 	if js == nil {
 		return ""
 	}
@@ -400,6 +398,17 @@ func checkRedisValid(keys string, targetData *redis.StringCmd) string {
 	}
 
 	return js.GetStr("data")
+}
+
+// 检验redis缓存是否有效
+// @param keys string redis缓存的键名
+// @param targetData *StringCmd 目标数据
+func checkRedisValid(keys string, targetData *redis.StringCmd) string {
+	if targetData == nil || targetData.Val() == "" {
+		return ""
+	}
+
+	return checkStringValid(keys, targetData.Val())
 }
 
 // 组装缓存的值
@@ -446,6 +455,42 @@ func (this *RedisObject)Lpop(key string) string {
 	val := this.myredis.LPop(keys)
 	result := checkRedisValid(keys, val)
 	return result
+}
+
+
+// 操作list结构 blpop
+// 要操作的key
+// 要等待的时间
+func (this *RedisObject)LPOPWait(key string, _timeOut uint32) (error, []string) {
+
+	keys := key
+	if this.prefix != "" {
+		keys = this.prefix+"_"+key
+	}
+
+	val := this.myredis.BLPop(time.Duration(_timeOut) * time.Second, keys)
+	if val.Err() != nil {
+		if val.Err().Error() == "redis: nil" {
+			return nil, nil
+		}
+		clLog.Debug("valErr: %v", val.Err().Error())
+		return val.Err(), nil
+	}
+
+	res, err  := val.Result()
+	if err != nil {
+		clLog.Debug("err: %v", err)
+		return err, nil
+	}
+
+	result := make([]string, 0)
+	for _, str := range res {
+		isOkStr := checkStringValid(keys, str)
+		if isOkStr != "" {
+			result = append(result, isOkStr)
+		}
+	}
+	return nil, result
 }
 
 
