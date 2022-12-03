@@ -116,7 +116,6 @@ func AesCBCEncode(_buffer string, _key string, iv string) string {
 
 	// 加密
 	blockMode.CryptBlocks(origData, dValue)
-	fmt.Printf("加密: %v\n", origData)
 	return Base64Encode(origData)
 }
 
