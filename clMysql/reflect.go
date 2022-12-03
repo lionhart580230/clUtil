@@ -136,6 +136,47 @@ func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
 
 
 // 根据数据结构取得字段列表
+func GetInsertSqlMulti(_dataList []interface{}, _primary bool) ([]string, []string) {
+
+	_fields := make([]string, 0)
+	_valueList := make([]string, 0)
+
+	for k, _val := range _dataList {
+
+		_type := reflect.TypeOf(_val)
+		_value := reflect.ValueOf(_val)
+
+		_values := make([]string, 0)
+
+		for i := 0; i < _type.NumField(); i++ {
+
+			if _type.Field(i).Name[0] >= 97 {
+				continue	// 小写的过滤掉
+			}
+
+			if !_primary {
+				if strings.ToUpper(_type.Field(i).Tag.Get("primary")) == "TRUE" {
+					continue
+				}
+			}
+
+			if _type.Field(i).Tag.Get("db") == "" {
+				continue
+			}
+
+			if k == 0 {
+				_fields = append(_fields, _type.Field(i).Tag.Get("db"))
+			}
+			_values = append(_values, fmt.Sprintf("'%v'", _value.Field(i).Interface()))
+		}
+		_valueList = append(_valueList, fmt.Sprintf("(%v)", strings.Join(_values, ",")))
+	}
+
+	return _fields, _valueList
+}
+
+
+// 根据数据结构取得字段列表
 func GetUpdateSql(_val interface{}, _primary bool) []string {
 
 	_fields := make([]string, 0)

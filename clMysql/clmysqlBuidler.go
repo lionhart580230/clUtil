@@ -3,6 +3,8 @@ package clMysql
 import (
 	"errors"
 	"fmt"
+	"github.com/xiaolan580230/clUtil/clCommon"
+	"github.com/xiaolan580230/clUtil/clLog"
 	"github.com/xiaolan580230/clUtil/clSuperMap"
 	"reflect"
 	"strings"
@@ -607,6 +609,79 @@ func (this *SqlBuider) Add(data map[string]interface{}) (int64, error) {
 	return resp, err
 }
 
+
+
+/**
+  批量添加语句
+  @param data map[string] string 需要添加的字段列表
+  @return 最后一条添加的id
+*/
+func (this *SqlBuider) AddMulti(_list []map[string]interface{}) (int64, error) {
+
+	if this.tablename == "" {
+		return 0, errors.New("EMPTY TABLE NAME")
+	}
+	if len(_list) == 0 {
+		return 0, errors.New("EMPTY DATA")
+	}
+
+	// 拼接字段区和值字段区
+	fieldstr := make([]string, 0)
+	for field, _ := range _list[0] {
+		fieldstr = append(fieldstr, fmt.Sprintf("%v", field))
+	}
+
+	valueList := make([]string, 0)
+
+	for _, data := range _list {
+		var valueArr = make([]string, len(fieldstr))
+		for field, val := range data {
+
+			idx := clCommon.IndexOfStringArray(fieldstr, field, true)
+			if idx == -1 {
+				continue
+			}
+
+			valueArr[idx] = fmt.Sprintf("'%v'", val)
+		}
+		valueList = append(valueList, "(" + strings.Join(valueArr, ",") + ")")
+	}
+
+	if len(valueList) == 0 || len(fieldstr) == 0 {
+		return 0, errors.New("EMPTY UPDATE COLUMN LIST")
+	}
+
+	// 拼接重复区
+	onDuplicateStr := strings.Builder{}
+	if this.duplicateKey != nil && len(this.duplicateKey) > 0 {
+		onDuplicateStr.WriteString(" ON DUPLICATE KEY UPDATE ")
+
+		for i, val := range this.duplicateKey {
+			if i > 0 {
+				onDuplicateStr.WriteString(",")
+			}
+			onDuplicateStr.WriteString(fmt.Sprintf("`%[1]v` = VALUES(`%[1]v`)", val))
+		}
+	}
+
+	this.finalSql = fmt.Sprintf("INSERT INTO %v (`%v`) VALUES %v %v", this.tablename, strings.Join(fieldstr, "`,`"), strings.Join(valueList, ","), onDuplicateStr.String())
+
+	clLog.Info("sqlStr: %v", this.finalSql)
+	var resp int64
+	var err error
+
+	switch this.dbType {
+	case 0: // 正常
+		resp, err = Exec(this.finalSql)
+	case 1: // Picker
+		resp, err = this.dbPointer.Exec(this.finalSql)
+	case 2: // 事务
+		resp, err = this.dbTx.ExecTx(this.finalSql)
+	}
+
+	return resp, err
+}
+
 /**
   添加语句
   @param data map[string] string 需要添加的字段列表
@@ -1139,6 +1214,48 @@ func (this *SqlBuider) AddObj(_resp interface{}, _include_primary bool) (int64, 
 
 	if err != nil {
 		return 0, errors.New(fmt.Sprintf("%v SQL(%v)", err, sqlStr))
+	}
+
+	return resp, nil
+}
+
+
+
+// 获取查找
+func (this *SqlBuider) AddObjMulti(_resp []interface{}, _includePrimary bool) (int64, error) {
+
+	fieldList, valuesList := GetInsertSqlMulti(_resp, _includePrimary)
+
+	// 拼接重复区
+	onDuplicateStr := strings.Builder{}
+	if this.duplicateKey != nil && len(this.duplicateKey) > 0 {
+		onDuplicateStr.WriteString(" ON DUPLICATE KEY UPDATE ")
+
+		for i, val := range this.duplicateKey {
+			if i > 0 {
+				onDuplicateStr.WriteString(",")
+			}
+			onDuplicateStr.WriteString(fmt.Sprintf("`%[1]v` = VALUES(`%[1]v`)", val))
+		}
+	}
+
+	this.finalSql = fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES %v %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, ","), onDuplicateStr.String())
+
+	clLog.Debug("finalSql: %v", this.finalSql)
+	var resp int64
+	var err error
+
+	switch this.dbType {
+	case 0: // 正常
+		resp, err = Exec(this.finalSql, 0)
+	case 1: // Picker
+		resp, err = this.dbPointer.Exec(this.finalSql)
+	case 2: // 事务
+		resp, err = this.dbTx.ExecTx(this.finalSql)
+	}
+
+	if err != nil {
+		return 0, err
 	}
 
 	return resp, nil
