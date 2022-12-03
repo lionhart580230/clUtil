@@ -81,7 +81,7 @@ func AesCBCDecode(_buffer []byte, _key []byte, _iv []byte) string {
 		return ""
 	}
 
-	blockMode := cipher.NewCBCDecrypter(_cipher, _iv)
+	blockMode := cipher.NewCBCDecrypter(_cipher, _iv[:_cipher.BlockSize()])
 
 	origData := make([]byte, len(dData))
 	blockMode.CryptBlocks(origData, dData)
@@ -108,7 +108,7 @@ func AesCBCEncode(_buffer string, _key string, iv string) string {
 	value := _buffer
 
 	// 生成CBC加密对象
-	blockMode := cipher.NewCBCEncrypter(_cipher, []byte(iv))
+	blockMode := cipher.NewCBCEncrypter(_cipher, []byte(iv[:_cipher.BlockSize()]))
 
 	// 填充字节
 	dValue, _ := pkcs7Padding([]byte(value), aes.BlockSize)
