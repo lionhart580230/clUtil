@@ -1,17 +1,24 @@
 package clCrypt
 
 import (
-	"fmt"
+	"github.com/xiaolan580230/clUtil/clCommon"
+	"github.com/xiaolan580230/clUtil/clLog"
 	"testing"
 )
 
 func TestAesCBCEncode(t *testing.T) {
-	var data = `{"k": "hello"}`
-	var aesKey = string(RandomBlock(32))
-	var iv = RandomBlock(32)
-	var cryptData = AesCBCEncode(data, aesKey, string(iv))
-	fmt.Printf("加密后内容: %v\n", cryptData)
+	for i := 0; i < 100; i++ {
+		// 随机字符串
+		var randomStr = clCommon.GenNonceStr(32)
+		var aesKey = string(RandomBlock(32))
+		var iv = RandomBlock(16)
 
-	var unCryptData = AesCBCDecode([]byte(cryptData), []byte(aesKey), iv)
-	fmt.Printf("解密后内容: %v\n", unCryptData)
+		var cryptData = AesCBCEncode(randomStr, aesKey, string(iv))
+		var unCryptData = AesCBCDecode([]byte(cryptData), []byte(aesKey), iv)
+
+		if unCryptData != randomStr {
+			clLog.Error("加密解密结果不对!!")
+		}
+	}
+
 }

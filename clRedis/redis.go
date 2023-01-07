@@ -198,16 +198,12 @@ func (this *RedisObject)SetEx(key string, value interface{}, expire uint32) bool
 		keys = this.prefix+"_"+key
 	}
 	value = buildRedisValue(keys, expire, value)
-	rest := this.myredis.HSet(keys, "test", value)
+	clLog.Debug("keys: %v", keys)
+	rest := this.myredis.Set(keys, "test", time.Duration(expire) * time.Second)
 	if rest == nil {
 		return false
 	}
-
-	ok, err := rest.Result()
-	if !ok || err != nil{
-		return false
-	}
-	return true
+	return rest.Val() == "OK"
 }
 
 // 设置hash结构的值(保存为json)
@@ -570,5 +566,13 @@ func (this *RedisObject) Increment(key string, _val int64) int64 {
 	} else {
 		res = this.myredis.IncrBy(key, _val)
 	}
+	return res.Val()
+}
+
+// 添加一个值
+func (this *RedisObject) SetExpire(_key string, _second uint32) bool {
+	var res *redis.BoolCmd
+
+	res = this.myredis.Expire(_key, time.Second * time.Duration(_second))
 	return res.Val()
 }
