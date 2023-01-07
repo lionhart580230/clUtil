@@ -198,8 +198,7 @@ func (this *RedisObject)SetEx(key string, value interface{}, expire uint32) bool
 		keys = this.prefix+"_"+key
 	}
 	value = buildRedisValue(keys, expire, value)
-	clLog.Debug("keys: %v", keys)
-	rest := this.myredis.Set(keys, "test", time.Duration(expire) * time.Second)
+	rest := this.myredis.Set(keys, value, time.Duration(expire) * time.Second)
 	if rest == nil {
 		return false
 	}
