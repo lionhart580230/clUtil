@@ -173,7 +173,6 @@ func (this *clTimer) GetWeekBetweenWithMSec(offset int) (uint64, uint64) {
 
 	begins := GetTimeStampWithMSec(fmt.Sprintf("%04v-%02v-%02v 00:00:00", beginTime.Year, beginTime.Month, beginTime.Days))
 
-	fmt.Printf("begins: %v\n", begins)
 	if beginTime.Week > 0 {
 		begins = begins - uint64(endTime.Week)*86400000
 	}
@@ -191,7 +190,7 @@ func (this *clTimer) GetWeekBetweenWithMSec(offset int) (uint64, uint64) {
 func (this *clTimer) GetDayBetween(offset int) (uint32, uint32) {
 
 	begins := GetTimeStamp(fmt.Sprintf("%04v-%02v-%02v 00:00:00", this.Year, this.Month, this.Days))
-	btime := begins + uint32(offset*86400)
+	btime := uint32(int32(begins) + int32(offset*86400))
 	return btime, btime + 86400 - 1
 }
 
@@ -202,7 +201,7 @@ func (this *clTimer) GetDayBetween(offset int) (uint32, uint32) {
 func (this *clTimer) GetDayBetweenWithMSec(offset int) (uint64, uint64) {
 
 	begins := GetTimeStampWithMSec(fmt.Sprintf("%04v-%02v-%02v 00:00:00", this.Year, this.Month, this.Days))
-	btime := begins + uint64(offset*86400000)
+	btime := uint64(int64(begins) + int64(offset*86400000))
 	return btime, btime + (86400-1)*1000
 }
 
