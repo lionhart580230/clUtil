@@ -63,6 +63,45 @@ func NewDB(host string, user string, pass string, dbname string) (*DBPointer, er
 	return &object, nil
 }
 
+type DBOpitions struct {
+	MaxConnection uint32
+	IdleConnection uint32
+	MaxLifeTime uint32
+}
+
+// 通过连线配置返回一个连线结构
+// @param host string 连线ip
+// @param user string 用户名
+// @param pass string 密码
+// @param dbname string 数据库名字
+func NewWithOpt(host string, user string, pass string, dbname string, _opt DBOpitions) (*DBPointer, error) {
+
+	dbp, err := sql.Open("mysql", user+":"+pass+"@tcp("+host+")/"+dbname+"?charset=utf8")
+	if err != nil {
+		return nil, err
+	}
+
+	err = dbp.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	dbp.SetMaxOpenConns( int(_opt.MaxConnection) )
+	//dbp.SetMaxOpenConns(0) // TODO 暂时增加到60
+	dbp.SetMaxIdleConns( int(_opt.IdleConnection) )
+	dbp.SetConnMaxLifetime(time.Duration(_opt.MaxLifeTime) * time.Second)
+
+	object := DBPointer{
+		conn: dbp,
+		dbname: dbname,
+		isconnect: true,
+		key: host+user+dbname,
+		Dbname:dbname,
+		lastupdate: uint32(time.Now().Unix()),
+	}
+	return &object, nil
+}
+
 
 // 设置最大空闲连接数,0为不限制
 func (this *DBPointer) SetMaxIdleConns(conns int) {
