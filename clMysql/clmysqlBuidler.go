@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/xiaolan580230/clUtil/clCommon"
-	"github.com/xiaolan580230/clUtil/clLog"
 	"github.com/xiaolan580230/clUtil/clSuperMap"
 	"reflect"
 	"strings"
@@ -666,7 +665,6 @@ func (this *SqlBuider) AddMulti(_list []map[string]interface{}) (int64, error) {
 
 	this.finalSql = fmt.Sprintf("INSERT INTO %v (`%v`) VALUES %v %v", this.tablename, strings.Join(fieldstr, "`,`"), strings.Join(valueList, ","), onDuplicateStr.String())
 
-	clLog.Info("sqlStr: %v", this.finalSql)
 	var resp int64
 	var err error
 
@@ -1241,7 +1239,6 @@ func (this *SqlBuider) AddObjMulti(_resp []interface{}, _includePrimary bool) (i
 
 	this.finalSql = fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES %v %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, ","), onDuplicateStr.String())
 
-	clLog.Debug("finalSql: %v", this.finalSql)
 	var resp int64
 	var err error
 
