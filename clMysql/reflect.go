@@ -129,7 +129,12 @@ func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
 		}
 
 		_fields = append(_fields, _type.Field(i).Tag.Get("db"))
-		_values = append(_values, fmt.Sprintf("%v", _value.Field(i).Interface()))
+		if strings.HasPrefix(_value.Field(i).Type().String(), "float") {
+			_values = append(_values, fmt.Sprintf("%f", _value.Field(i).Float()))
+		} else {
+			_values = append(_values, fmt.Sprintf("%v", _value.Field(i).Interface()))
+		}
+
 	}
 	return _fields, _values
 }
@@ -167,7 +172,11 @@ func GetInsertSqlMulti(_dataList []interface{}, _primary bool) ([]string, []stri
 			if k == 0 {
 				_fields = append(_fields, _type.Field(i).Tag.Get("db"))
 			}
-			_values = append(_values, fmt.Sprintf("'%v'", _value.Field(i).Interface()))
+			if strings.HasPrefix(_value.Field(i).Type().String(), "float") {
+				_values = append(_values, fmt.Sprintf("%f", _value.Field(i).Float()))
+			} else {
+				_values = append(_values, fmt.Sprintf("%v", _value.Field(i).Interface()))
+			}
 		}
 		_valueList = append(_valueList, fmt.Sprintf("(%v)", strings.Join(_values, ",")))
 	}

@@ -2,7 +2,6 @@ package clMysql
 
 import (
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clJson"
 	"github.com/xiaolan580230/clUtil/clLog"
 	"testing"
 )
@@ -34,6 +33,11 @@ func TestAddMaster(t *testing.T) {
 }
 
 
+type AddObjData struct {
+	A uint32 `db:"a" primary:"TRUE"`
+	B uint32 `db:"b"`
+	C float64 `db:"c"`
+}
 
 func TestSqlBuider_AddMulti(t *testing.T) {
 
@@ -42,26 +46,12 @@ func TestSqlBuider_AddMulti(t *testing.T) {
 		fmt.Printf("connect to mysql failed\n")
 		return
 	}
+	var data AddObjData
+	data.A = 100
+	data.B = 3
+	data.C = 2292929.988778
 
-	db.NewBuilder().Table("test").AddMulti([]map[string]interface{} {
-		clJson.M{
-			"a": 1,
-			"b": 2,
-			"c": 3,
-		},clJson.M{
-			"a": 1,
-			"b": 2,
-			"c": 3,
-		},clJson.M{
-			"a": 1,
-			"b": 2,
-			"c": 3,
-		},clJson.M{
-			"a": 1,
-			"b": 2,
-			"c": 3,
-		},
-	})
+	db.NewBuilder().Table("test").AddObj(data, true)
 
 }
 
