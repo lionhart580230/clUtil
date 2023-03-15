@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/xiaolan580230/clUtil/clCommon"
+	"github.com/xiaolan580230/clUtil/clLog"
 	"github.com/xiaolan580230/clUtil/clSuperMap"
 	"reflect"
 	"strings"
@@ -1197,6 +1198,7 @@ func (this *SqlBuider) AddObj(_resp interface{}, _include_primary bool) (int64, 
 
 	sqlStr := fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES('%v') %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, "','"), onDuplicateStr.String())
 
+	clLog.Info("SQL: %v", sqlStr)
 	this.finalSql = sqlStr
 	var resp int64
 	var err error
