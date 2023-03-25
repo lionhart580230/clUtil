@@ -317,3 +317,19 @@ func BetweenChuxiDays(timestamp uint32, target uint32) uint32 {
 	return betweenDays
 }
 
+
+
+// 获取当前时间戳
+func GetNowTime() uint32 {
+	return uint32(time.Now().Unix())
+}
+
+// 获取当前时间格式
+func GetNowDateTime() string {
+	return GetDate(uint32(time.Now().Unix()))
+}
+
+// 获取当前时间格式
+func GetNowFormat(_format string) string {
+	return GetDateByFormat(uint32(time.Now().Unix()), _format)
+}
