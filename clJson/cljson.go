@@ -2,15 +2,15 @@ package clJson
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/json-iterator/go"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-type M map[string] interface{}
+type M map[string]interface{}
 type A []interface{}
 
 // 创建一个新对象
@@ -18,9 +18,9 @@ type A []interface{}
 func New(bs []byte) *JsonStream {
 	var js JsonStream
 	js.data = bs
-	js.data = bytes.Replace(js.data, []byte{9}, []byte{}, -1)		// 去除tab
-	js.data = bytes.Replace(js.data, []byte{10}, []byte{}, -1)		// 去除tab
-	js.data = bytes.Replace(js.data, []byte{13}, []byte{}, -1)		// 去除tab
+	js.data = bytes.Replace(js.data, []byte{9}, []byte{}, -1)  // 去除tab
+	js.data = bytes.Replace(js.data, []byte{10}, []byte{}, -1) // 去除tab
+	js.data = bytes.Replace(js.data, []byte{13}, []byte{}, -1) // 去除tab
 	js.dataLength = uint32(len(js.data))
 
 	if !js.IsValidJson() {
@@ -30,13 +30,12 @@ func New(bs []byte) *JsonStream {
 	return &js
 }
 
-
 // 创建一个新的实体
 func CreateBy(v interface{}) *JsonStream {
 
 	var js JsonStream
 	var err error
-	js.data, err = jsoniter.Marshal(v)
+	js.data, err = json.Marshal(v)
 	if err != nil {
 		fmt.Printf(">> 创建json失败! marshal错误: %v", err)
 		return &js
@@ -50,8 +49,6 @@ func CreateBy(v interface{}) *JsonStream {
 	return &js
 }
 
-
-
 // 检测某个key是否存在
 func (js *JsonStream) IsSet(_key string) bool {
 	if js.dataMap == nil {
@@ -61,8 +58,6 @@ func (js *JsonStream) IsSet(_key string) bool {
 	_, exists := js.dataMap[_key]
 	return exists
 }
-
-
 
 // 判断是否是json_array
 func (js *JsonStream) IsValidArray() bool {
@@ -117,22 +112,22 @@ func (js *JsonStream) IsValidArray() bool {
 					valType = JSON_TYPE_MAP
 				}
 			}
-			lessObject ++
+			lessObject++
 		case '[':
 			if valType == JSON_TYPE_NIL {
 				if lessObject == 1 && lessArray == 0 {
 					valType = JSON_TYPE_ARR
 				}
 			}
-			lessArray ++
+			lessArray++
 		case '}':
-			lessObject --
+			lessObject--
 			if lessObject < 0 {
 				return false
 			}
 
 		case ']':
-			lessArray --
+			lessArray--
 
 			if lessArray == 0 {
 				vtype := JSON_TYPE_NIL
@@ -176,7 +171,6 @@ func (js *JsonStream) IsValidArray() bool {
 		}
 	}
 
-
 	if lessArray != 0 || lessObject != 0 || isInString {
 		return false
 	}
@@ -185,8 +179,6 @@ func (js *JsonStream) IsValidArray() bool {
 	js.data = newBytes.Bytes()
 	return true
 }
-
-
 
 // 判断是否是json_map
 func (js *JsonStream) IsValidMap() bool {
@@ -204,7 +196,7 @@ func (js *JsonStream) IsValidMap() bool {
 		return true
 	}
 
-	cacheMap := make(map[string] string)
+	cacheMap := make(map[string]string)
 	for i, v := range js.data {
 		if i == 0 {
 			newBytes.WriteByte(v)
@@ -227,12 +219,12 @@ func (js *JsonStream) IsValidMap() bool {
 		isPass := false
 		// 字符串处理
 		if isInString {
-			if keyMode {		// 查找键模式
+			if keyMode { // 查找键模式
 				if v == ' ' {
 					return false
 				}
 				lastKey += string(v)
-			} else {			// 查找值模式
+			} else { // 查找值模式
 				lastVal = append(lastVal, v)
 			}
 			newBytes.WriteByte(v)
@@ -245,50 +237,49 @@ func (js *JsonStream) IsValidMap() bool {
 
 		// 各种结构解析
 		switch v {
-			case '{':
-				if valType == JSON_TYPE_NIL {
-					if lessObject == 1 && lessArray == 0 {
-						valType = JSON_TYPE_MAP
-					}
+		case '{':
+			if valType == JSON_TYPE_NIL {
+				if lessObject == 1 && lessArray == 0 {
+					valType = JSON_TYPE_MAP
 				}
-				lessObject ++
-			case '[':
-				if valType == JSON_TYPE_NIL {
-					if lessObject == 1 && lessArray == 0 {
-						valType = JSON_TYPE_ARR
-					}
+			}
+			lessObject++
+		case '[':
+			if valType == JSON_TYPE_NIL {
+				if lessObject == 1 && lessArray == 0 {
+					valType = JSON_TYPE_ARR
 				}
-				lessArray ++
-			case '}':
-				lessObject --
-				if lessObject <= 0 && i != int(js.dataLength)-1 {
+			}
+			lessArray++
+		case '}':
+			lessObject--
+			if lessObject <= 0 && i != int(js.dataLength)-1 {
+				return false
+			}
+
+			if lessObject == 0 {
+				vtype := JSON_TYPE_NIL
+				vtype, lastVal = checkType([]byte(lastVal))
+				if vtype == JSON_TYPE_NIL {
 					return false
 				}
 
-				if lessObject == 0 {
-					vtype := JSON_TYPE_NIL
-					vtype, lastVal = checkType([]byte(lastVal))
-					if vtype == JSON_TYPE_NIL {
-						return false
-					}
-
-					cacheMap[lastKey] = string(lastVal)
-					lastKey = ""
-					lastVal = make([]byte, 0)
-					keyMode = true
-					isPass = true
-					valType = JSON_TYPE_NIL
-				}
-
-			case ']':
-				lessArray --
-			case ':':
-				if lessObject == 1 && lessArray == 0 {
-					keyMode = false
-					isPass = true
-				}
+				cacheMap[lastKey] = string(lastVal)
+				lastKey = ""
+				lastVal = make([]byte, 0)
+				keyMode = true
+				isPass = true
+				valType = JSON_TYPE_NIL
 			}
 
+		case ']':
+			lessArray--
+		case ':':
+			if lessObject == 1 && lessArray == 0 {
+				keyMode = false
+				isPass = true
+			}
+		}
 
 		if !isPass {
 			// 搜索key， key不能包含空格
@@ -338,7 +329,6 @@ func (js *JsonStream) IsValidMap() bool {
 	return true
 }
 
-
 // 检查类型
 func checkType(data []byte) (int, []byte) {
 	if len(data) < 1 {
@@ -346,7 +336,7 @@ func checkType(data []byte) (int, []byte) {
 	}
 
 	data = bytes.TrimSpace(data)
-	end := len(data)-1
+	end := len(data) - 1
 	switch data[0] {
 	case '{':
 		if data[end] == '}' {
@@ -381,7 +371,6 @@ func checkType(data []byte) (int, []byte) {
 	return JSON_TYPE_NIL, nil
 }
 
-
 // 判断json结构是否有效
 func (js *JsonStream) IsValidJson() bool {
 	if js == nil {
@@ -402,19 +391,19 @@ func (js *JsonStream) IsValidJson() bool {
 		return js.IsValidMap()
 	} else if js.data[0] == '"' && end == '"' {
 		js.dataType = JSON_TYPE_STR
-		js.data = js.data[1:js.dataLength-1]
+		js.data = js.data[1 : js.dataLength-1]
 		js.dataLength = uint32(len(js.data))
 		return true
 	} else if string(js.data[:2]) == `\"` && string(js.data[js.dataLength-2:]) == `\"` {
 		js.dataType = JSON_TYPE_STR
-		js.data = js.data[2:js.dataLength-2]
+		js.data = js.data[2 : js.dataLength-2]
 		js.dataLength = uint32(len(js.data))
 		return true
 	}
 
 	// 判断是否是数值
-	reg, _ := regexp.Compile(`^(\-)?[0-9]+(\.[0-9]+)?(e[0-9]+)?$`)		// 整数/小数
-	reg2, _ := regexp.Compile(`^(true|false|TRUE|FALSE)$`)	// 布尔
+	reg, _ := regexp.Compile(`^(\-)?[0-9]+(\.[0-9]+)?(e[0-9]+)?$`) // 整数/小数
+	reg2, _ := regexp.Compile(`^(true|false|TRUE|FALSE)$`)         // 布尔
 	regE, _ := regexp.Compile(`^(\-)?[0-9](\.[0-9]+)E(\-)?[0-9]$`)
 
 	if reg2.Match(js.data) {
@@ -436,7 +425,6 @@ func (js *JsonStream) IsValidJson() bool {
 	return false
 }
 
-
 // 转换成字符串
 func (js *JsonStream) ToStr() string {
 	var min = js.lastLockBegin
@@ -453,7 +441,6 @@ func (js *JsonStream) ToStr() string {
 	}
 	return string(js.data[min:max])
 }
-
 
 // 转换成字符串
 func (js *JsonStream) ToFloat32() float32 {
@@ -485,7 +472,7 @@ func (js *JsonStream) ToInt32() int32 {
 // 转换成字符串
 func (js *JsonStream) ToUint32() uint32 {
 	i, e := strconv.ParseUint(js.ToStr(), 10, 64)
-	if e != nil{
+	if e != nil {
 		return 0
 	}
 	return uint32(i)
@@ -511,7 +498,7 @@ func (js *JsonStream) ToUint64() uint64 {
 
 // 转换成bool
 func (js *JsonStream) ToBool() bool {
-	b, e := strconv.ParseBool( js.ToStr() )
+	b, e := strconv.ParseBool(js.ToStr())
 	if e != nil {
 		return b
 	}
@@ -529,11 +516,11 @@ func (js *JsonStream) ToJSON() []byte {
 }
 
 // 变成Arr
-func (js *JsonStream) ToArray()  *JsonArray {
+func (js *JsonStream) ToArray() *JsonArray {
 
 	var jsonArr = make(JsonArray, 0)
 	for _, val := range js.dataArray {
-		jsonArr = append(jsonArr, jsonItem{ New([]byte(val)) })
+		jsonArr = append(jsonArr, jsonItem{New([]byte(val))})
 	}
 	return &jsonArr
 }
@@ -543,15 +530,14 @@ func (js *JsonStream) ToMap() *JsonMap {
 
 	var jsonMap = make(JsonMap, 0)
 	for mKey, mVal := range js.dataMap {
-		jsonMap[mKey] = jsonItem { New([]byte(mVal)) }
+		jsonMap[mKey] = jsonItem{New([]byte(mVal))}
 	}
 
 	return &jsonMap
 }
 
-
 // 获取json中的字符串
-func (js *JsonStream) GetStr(key string, subkey... string) string {
+func (js *JsonStream) GetStr(key string, subkey ...string) string {
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
 		item := New([]byte(val))
@@ -568,7 +554,7 @@ func (js *JsonStream) GetStr(key string, subkey... string) string {
 			return ""
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return ""
 		}
 		cacheVal := itemMap.GetStr(key, "")
@@ -585,7 +571,7 @@ func (js *JsonStream) GetStr(key string, subkey... string) string {
 }
 
 // 获取json中的小数
-func (js *JsonStream) GetFloat32(key string, subkey... string) float32 {
+func (js *JsonStream) GetFloat32(key string, subkey ...string) float32 {
 
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
@@ -603,7 +589,7 @@ func (js *JsonStream) GetFloat32(key string, subkey... string) float32 {
 			return 0
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return 0
 		}
 
@@ -621,7 +607,7 @@ func (js *JsonStream) GetFloat32(key string, subkey... string) float32 {
 }
 
 // 获取json中的整数
-func (js *JsonStream) GetInt32(key string, subkey... string) int32 {
+func (js *JsonStream) GetInt32(key string, subkey ...string) int32 {
 
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
@@ -639,7 +625,7 @@ func (js *JsonStream) GetInt32(key string, subkey... string) int32 {
 			return 0
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return 0
 		}
 
@@ -657,7 +643,7 @@ func (js *JsonStream) GetInt32(key string, subkey... string) int32 {
 }
 
 // 获取json中的整数
-func (js *JsonStream) GetInt64(key string, subkey... string) int64 {
+func (js *JsonStream) GetInt64(key string, subkey ...string) int64 {
 
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
@@ -675,7 +661,7 @@ func (js *JsonStream) GetInt64(key string, subkey... string) int64 {
 			return 0
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return 0
 		}
 
@@ -693,7 +679,7 @@ func (js *JsonStream) GetInt64(key string, subkey... string) int64 {
 }
 
 // 获取json中的整数
-func (js *JsonStream) GetUint64(key string, subkey... string) uint64 {
+func (js *JsonStream) GetUint64(key string, subkey ...string) uint64 {
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
 		item := New([]byte(val))
@@ -710,7 +696,7 @@ func (js *JsonStream) GetUint64(key string, subkey... string) uint64 {
 			return 0
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return 0
 		}
 
@@ -728,7 +714,7 @@ func (js *JsonStream) GetUint64(key string, subkey... string) uint64 {
 }
 
 // 获取json中的整数
-func (js *JsonStream) GetUint32(key string, subkey... string) uint32 {
+func (js *JsonStream) GetUint32(key string, subkey ...string) uint32 {
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
 		item := New([]byte(val))
@@ -745,7 +731,7 @@ func (js *JsonStream) GetUint32(key string, subkey... string) uint32 {
 			return 0
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return 0
 		}
 
@@ -763,7 +749,7 @@ func (js *JsonStream) GetUint32(key string, subkey... string) uint32 {
 }
 
 // 获取json中的小数
-func (js *JsonStream) GetFloat64(key string, subkey... string) float64 {
+func (js *JsonStream) GetFloat64(key string, subkey ...string) float64 {
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
 		item := New([]byte(val))
@@ -780,7 +766,7 @@ func (js *JsonStream) GetFloat64(key string, subkey... string) float64 {
 			return 0
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return 0
 		}
 
@@ -798,7 +784,7 @@ func (js *JsonStream) GetFloat64(key string, subkey... string) float64 {
 }
 
 // 获取json中的布尔类型
-func (js *JsonStream) GetBool(key string, subkey... string) bool {
+func (js *JsonStream) GetBool(key string, subkey ...string) bool {
 	val := js.dataMap[key]
 	if len(subkey) == 0 {
 		item := New([]byte(val))
@@ -815,7 +801,7 @@ func (js *JsonStream) GetBool(key string, subkey... string) bool {
 			return false
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return false
 		}
 
@@ -833,7 +819,7 @@ func (js *JsonStream) GetBool(key string, subkey... string) bool {
 }
 
 // 获取json中的数组
-func (js *JsonStream) GetArray(key string, subkey... string) *JsonArray {
+func (js *JsonStream) GetArray(key string, subkey ...string) *JsonArray {
 	var findBytes = make([]byte, 0)
 	if js.lastLockEnd == 0 {
 		findBytes = findLastValue(js.data, []byte(key))
@@ -855,13 +841,13 @@ func (js *JsonStream) GetArray(key string, subkey... string) *JsonArray {
 	var jsonArr = make(JsonArray, 0)
 
 	for _, val := range arrItem {
-		jsonArr = append(jsonArr, jsonItem{ New(val) })
+		jsonArr = append(jsonArr, jsonItem{New(val)})
 	}
 	return &jsonArr
 }
 
 // 获取json中的Map
-func (js *JsonStream) GetMap(key string, subkey... string) *JsonMap {
+func (js *JsonStream) GetMap(key string, subkey ...string) *JsonMap {
 
 	val := js.dataMap[key]
 	var jsonMap = make(JsonMap)
@@ -880,7 +866,7 @@ func (js *JsonStream) GetMap(key string, subkey... string) *JsonMap {
 			return &jsonMap
 		}
 		itemMap := item.ToMap()
-		if itemMap == nil  {
+		if itemMap == nil {
 			return &jsonMap
 		}
 
@@ -897,7 +883,6 @@ func (js *JsonStream) GetMap(key string, subkey... string) *JsonMap {
 	return finaly.ToMap()
 }
 
-
 // 搜索指定key的位置
 func findKeyPos(target []byte, key []byte) int {
 	targetLen := len(target)
@@ -906,17 +891,16 @@ func findKeyPos(target []byte, key []byte) int {
 		return -1
 	}
 
-	for i:=1; i<targetLen-keyLen; i++ {
+	for i := 1; i < targetLen-keyLen; i++ {
 		if bytes.Equal(target[i:keyLen+i], key) && target[i-1] == '"' && target[keyLen+i] == '"' {
-			return i-1
+			return i - 1
 		}
 	}
 	return -1
 }
 
-
 // 解析数组
-func parseArray(target []byte) [][]byte{
+func parseArray(target []byte) [][]byte {
 	lenTarget := len(target)
 	if lenTarget <= 2 {
 		return make([][]byte, 0)
@@ -924,13 +908,13 @@ func parseArray(target []byte) [][]byte{
 	if target[0] != '[' || target[lenTarget-1] != ']' {
 		return make([][]byte, 0)
 	}
-	isInString := false	// 是否在引号内部
+	isInString := false // 是否在引号内部
 	leftCount := 1
-	findPos := 1		// 现在的位置
-	keyPos := findPos	// 上一个key的位置
+	findPos := 1      // 现在的位置
+	keyPos := findPos // 上一个key的位置
 	maxLen := lenTarget
 	byteArr := make([][]byte, 0)
-	for i:=findPos; i<maxLen; i++ {
+	for i := findPos; i < maxLen; i++ {
 		if target[i] == '"' {
 			isInString = !isInString
 		} else if target[i] == '[' || target[i] == '{' {
@@ -944,7 +928,7 @@ func parseArray(target []byte) [][]byte{
 		} else if target[i] == ',' && leftCount == 1 {
 			if !isInString {
 				byteArr = append(byteArr, target[keyPos:i])
-				keyPos=i+1
+				keyPos = i + 1
 			}
 		}
 	}
@@ -954,9 +938,8 @@ func parseArray(target []byte) [][]byte{
 	return byteArr
 }
 
-
 // 解析Map
-func parseMap(target []byte) map[string] []byte{
+func parseMap(target []byte) map[string][]byte {
 	result := make(map[string][]byte, 0)
 	lenOfTarget := len(target)
 	if lenOfTarget <= 2 {
@@ -965,13 +948,13 @@ func parseMap(target []byte) map[string] []byte{
 	if target[0] != '{' || target[lenOfTarget-1] != '}' {
 		return result
 	}
-	isInString := false	// 是否在引号内部
-	findPos := 1		// 现在的位置
+	isInString := false // 是否在引号内部
+	findPos := 1        // 现在的位置
 	leftCount := 1
-	keyPos := findPos	// 上一个key的位置
-	MaoPos := 0			// 上一个冒号的位置
+	keyPos := findPos // 上一个key的位置
+	MaoPos := 0       // 上一个冒号的位置
 	maxLen := len(target)
-	for i:=findPos; i < maxLen; i++ {
+	for i := findPos; i < maxLen; i++ {
 		if target[i] == '{' || target[i] == '[' {
 			if !isInString {
 				leftCount++
@@ -981,13 +964,13 @@ func parseMap(target []byte) map[string] []byte{
 				leftCount--
 			}
 		} else if target[i] == ':' && leftCount == 1 {
-			if !isInString {	// 引号内的冒号不算
-				MaoPos = i		// 设置冒号的位置
+			if !isInString { // 引号内的冒号不算
+				MaoPos = i // 设置冒号的位置
 			}
 		} else if target[i] == ',' && leftCount == 1 {
-			if !isInString {	// 引号内的逗号不算
-				result[string(target[keyPos+1:MaoPos-1])] = target[MaoPos+1:i]
-				keyPos = i+1
+			if !isInString { // 引号内的逗号不算
+				result[string(target[keyPos+1:MaoPos-1])] = target[MaoPos+1 : i]
+				keyPos = i + 1
 			}
 		} else if target[i] == '"' && (i == 0 || string(target[i-1]) != `\`) {
 			isInString = !isInString
@@ -998,32 +981,30 @@ func parseMap(target []byte) map[string] []byte{
 	return result
 }
 
-
 // 获取指定内容的范围
 func getValueBetween(subByte []byte, finder []byte) (int, int) {
 
 	var lenOfFinder = len(finder)
 	var beginBytes = 0
 	var endBytes = 0
-	for i:=0; i+lenOfFinder<len(subByte); i++ {
+	for i := 0; i+lenOfFinder < len(subByte); i++ {
 		if bytes.Equal(subByte[i:i+lenOfFinder], finder) && subByte[i-1] == '"' && subByte[i+lenOfFinder] == '"' {
 			if subByte[i+lenOfFinder+1] != ':' {
 				return 0, 0
 			}
-			beginBytes = i-1
+			beginBytes = i - 1
 			switch subByte[i+lenOfFinder+2] {
 			case '"':
 				endBytes = getLastStringEnd(subByte[i+lenOfFinder+3:])
 			}
 		}
 	}
-	return beginBytes, beginBytes+endBytes+lenOfFinder+5
+	return beginBytes, beginBytes + endBytes + lenOfFinder + 5
 }
-
 
 // 获取string的结束
 func getLastStringEnd(target []byte) int {
-	for i:=0; i<len(target); i++ {
+	for i := 0; i < len(target); i++ {
 		if target[i] == '"' && (i == 0 || string(target[i-1]) != `\`) {
 			return i
 		}
@@ -1031,13 +1012,12 @@ func getLastStringEnd(target []byte) int {
 	return 0
 }
 
-
 func findLastValue(subByte []byte, finder []byte) []byte {
 	var lenOfFinder = len(finder)
 	if lenOfFinder == 0 {
 		return nil
 	}
-	for i:=0; i+lenOfFinder<len(subByte); i++ {
+	for i := 0; i+lenOfFinder < len(subByte); i++ {
 		if bytes.Equal(subByte[i:i+lenOfFinder], finder) && subByte[i-1] == '"' && subByte[i+lenOfFinder] == '"' {
 			if subByte[i+lenOfFinder+1] != ':' {
 				return nil
@@ -1059,10 +1039,9 @@ func findLastValue(subByte []byte, finder []byte) []byte {
 	return nil
 }
 
-
 // 获取一个字符串
 func getLastString(beginBytes []byte) []byte {
-	for i:=0; i<len(beginBytes); i++ {
+	for i := 0; i < len(beginBytes); i++ {
 		if beginBytes[i] == '"' && (i == 0 || string(beginBytes[i-1]) != `\`) {
 			return beginBytes[:i]
 		}
@@ -1072,7 +1051,7 @@ func getLastString(beginBytes []byte) []byte {
 
 // 获取一个数字
 func getLastNumber(beginBytes []byte) []byte {
-	for i:=0; i<len(beginBytes); i++ {
+	for i := 0; i < len(beginBytes); i++ {
 		if beginBytes[i] == ',' || beginBytes[i] == '}' || beginBytes[i] == ']' {
 			return beginBytes[:i]
 		}
@@ -1080,11 +1059,10 @@ func getLastNumber(beginBytes []byte) []byte {
 	return beginBytes
 }
 
-
 // 获取一个数组
 func getLastArr(beginBytes []byte) []byte {
-	leftCount := 1		// 左括号有几个
-	for i:=1; i<len(beginBytes); i++ {
+	leftCount := 1 // 左括号有几个
+	for i := 1; i < len(beginBytes); i++ {
 		if beginBytes[i] == '[' {
 			leftCount++
 		} else if beginBytes[i] == ']' {
@@ -1100,11 +1078,11 @@ func getLastArr(beginBytes []byte) []byte {
 // 获取一个MAP
 func getLastMap(beginBytes []byte) []byte {
 	leftCount := 1
-	for i:=1; i<len(beginBytes); i++ {
+	for i := 1; i < len(beginBytes); i++ {
 
 		if beginBytes[i] == '{' {
 			leftCount++
-		}else if beginBytes[i] == '}' {
+		} else if beginBytes[i] == '}' {
 			leftCount--
 			if leftCount == 0 {
 				return beginBytes[:i+1]
@@ -1113,8 +1091,6 @@ func getLastMap(beginBytes []byte) []byte {
 	}
 	return nil
 }
-
-
 
 func JCode(code uint32, param string, v interface{}) []byte {
 
