@@ -41,7 +41,7 @@ func CreateBy(v interface{}) *JsonStream {
 		return &js
 	}
 	temp := js.data
-	js.dataLength = uint32(cap(temp))
+	js.dataLength = uint32(len(temp))
 	if !js.IsValidJson() {
 		fmt.Printf(">> 创建JSON失败! (%v)\n", string(temp))
 		return &js
@@ -378,7 +378,6 @@ func (js *JsonStream) IsValidJson() bool {
 	}
 
 	if js.dataLength == 0 {
-
 		return false
 	}
 
