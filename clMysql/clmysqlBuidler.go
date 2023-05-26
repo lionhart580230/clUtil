@@ -14,8 +14,10 @@ type sqlJoin struct {
 	JoinCondition string
 }
 
-/**
-  数据库语句生成器
+/*
+*
+
+	数据库语句生成器
 */
 type SqlBuider struct {
 	tablename  string
@@ -109,9 +111,11 @@ func (this *DBPointer) BuilderForTable(_tableName string) *SqlBuider {
 	return sqlbuild.Table(_tableName)
 }
 
-/**
-  设置表格名称
-  @param tablename string  要设置的表格名称
+/*
+*
+
+	设置表格名称
+	@param tablename string  要设置的表格名称
 */
 func (this *SqlBuider) Table(tablename string) *SqlBuider {
 	this.tablename = tablename
@@ -145,9 +149,11 @@ func (this *SqlBuider) Table(tablename string) *SqlBuider {
 	return this
 }
 
-/**
-  设置WHERE条件
-  @param wherestr string WHERE条件文本
+/*
+*
+
+	设置WHERE条件
+	@param wherestr string WHERE条件文本
 */
 func (this *SqlBuider) Where(wherestr string, args ...interface{}) *SqlBuider {
 
@@ -160,7 +166,8 @@ func (this *SqlBuider) Where(wherestr string, args ...interface{}) *SqlBuider {
 	return this
 }
 
-/**
+/*
+*
 设置重复要更新的key列表
 */
 func (this *SqlBuider) OnDuplicateKey(keys []string) *SqlBuider {
@@ -168,65 +175,76 @@ func (this *SqlBuider) OnDuplicateKey(keys []string) *SqlBuider {
 	return this
 }
 
-/**
-  设置要查询的Field
-  @param fiedlStr string FIELD字段列表
+/*
+*
+
+	设置要查询的Field
+	@param fiedlStr string FIELD字段列表
 */
 func (this *SqlBuider) Field(fieldStr string) *SqlBuider {
 	this.fieldStr = fieldStr
 	return this
 }
 
-/**
-  设置分组
-  @param group string 分组内容
+/*
+*
+
+	设置分组
+	@param group string 分组内容
 */
 func (this *SqlBuider) Group(groupStr string) *SqlBuider {
 	this.group = groupStr
 	return this
 }
 
-/**
-  设置排序方式
-  @param orders string 排序内容
+/*
+*
+
+	设置排序方式
+	@param orders string 排序内容
 */
 func (this *SqlBuider) Order(orders string) *SqlBuider {
 	this.orders = orders
 	return this
 }
 
-/**
-  设置Cache 缓存时间
-  @param expire int32 缓存有效期
+/*
+*
+
+	设置Cache 缓存时间
+	@param expire int32 缓存有效期
 */
 func (this *SqlBuider) Cache(expire uint32) *SqlBuider {
 	this.expire = expire
 	return this
 }
 
-/**
-  设置LIMIT限制
-  @param min int32 设置limit的最小值
-  @param count int32 设置limit的数量
+/*
+*
+
+	设置LIMIT限制
+	@param min int32 设置limit的最小值
+	@param count int32 设置limit的数量
 */
 func (this *SqlBuider) Limit(min int32, count int32) *SqlBuider {
 	this.limit = fmt.Sprintf(" LIMIT %v, %v", min, count)
 	return this
 }
 
+/*
+*
 
-/**
-  设置LIMIT限制
-  @param min int32 设置limit的最小值
-  @param count int32 设置limit的数量
+	设置LIMIT限制
+	@param min int32 设置limit的最小值
+	@param count int32 设置limit的数量
 */
 func (this *SqlBuider) Page(page int32, count int32) *SqlBuider {
-	this.limit = fmt.Sprintf(" LIMIT %v, %v", page * count, count)
+	this.limit = fmt.Sprintf(" LIMIT %v, %v", page*count, count)
 	return this
 }
 
-
-/**
+/*
+*
 设置DB名字
 @param dbname string 设置DB名字
 */
@@ -235,8 +253,10 @@ func (this *SqlBuider) DB(dbname string) *SqlBuider {
 	return this
 }
 
-/**
-  查询语句
+/*
+*
+
+	查询语句
 */
 func (this *SqlBuider) Select() (*DbResult, error) {
 
@@ -261,10 +281,12 @@ func (this *SqlBuider) Select() (*DbResult, error) {
 	return resp, err
 }
 
-/**
-    查询语句
-	获取指定索引处的数据
-	@param idx int 索引id
+/*
+*
+
+	    查询语句
+		获取指定索引处的数据
+		@param idx int 索引id
 */
 func (this *SqlBuider) Find(idx uint32) (*clSuperMap.SuperMap, error) {
 
@@ -297,10 +319,12 @@ func (this *SqlBuider) Find(idx uint32) (*clSuperMap.SuperMap, error) {
 	return resp.ArrResult[idx], nil
 }
 
-/**
-    查询语句
-	获取指定索引处的数据
-	@param idx int 索引id
+/*
+*
+
+	    查询语句
+		获取指定索引处的数据
+		@param idx int 索引id
 */
 func (this *SqlBuider) Count() (int32, error) {
 
@@ -330,10 +354,12 @@ func (this *SqlBuider) Count() (int32, error) {
 	return resp.ArrResult[0].GetInt32("t_count", 0), nil
 }
 
-/**
-    查询语句
-	获取指定索引处的数据
-	@param idx int 索引id
+/*
+*
+
+	    查询语句
+		获取指定索引处的数据
+		@param idx int 索引id
 */
 func (this *SqlBuider) Max(_field string) (uint64, error) {
 
@@ -362,8 +388,10 @@ func (this *SqlBuider) Max(_field string) (uint64, error) {
 	return resp.ArrResult[0].GetUInt64("max_id", 0), nil
 }
 
-/**
-  事务查询语句
+/*
+*
+
+	事务查询语句
 */
 func (this *SqlBuider) SelectTx(tx *DbTransform) (*DbResult, error) {
 
@@ -388,10 +416,12 @@ func (this *SqlBuider) SelectTx(tx *DbTransform) (*DbResult, error) {
 	return resp, err
 }
 
-/**
-  更新语句.
-  @param data map[string] string 需要更新字段列表
-  @return 修改成功个数, 错误
+/*
+*
+
+	更新语句.
+	@param data map[string] string 需要更新字段列表
+	@return 修改成功个数, 错误
 */
 func (this *SqlBuider) Save(data map[string]interface{}) (int64, error) {
 
@@ -428,23 +458,22 @@ func (this *SqlBuider) Save(data map[string]interface{}) (int64, error) {
 	return resp, err
 }
 
-
 // 基于对象的修改
 func (this *SqlBuider) SaveObj(_resp interface{}) (int64, error) {
 
 	fieldList := GetUpdateSql(_resp, false)
 
-	this.finalSql = fmt.Sprintf("UPDATE `%v`.`%v` SET %v WHERE %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), this.whereStr)
+	this.finalSql = fmt.Sprintf("UPDATE `%v`.`%v` SET %v WHERE %v", this.dbname, this.tablename, strings.Join(fieldList, ","), this.whereStr)
 
 	var resp int64
 	var err error
 
 	switch this.dbType {
-	case 0:		// 正常
+	case 0: // 正常
 		resp, err = Exec(this.finalSql, 0)
-	case 1:		// Picker
+	case 1: // Picker
 		resp, err = this.dbPointer.Exec(this.finalSql)
-	case 2:		// 事务
+	case 2: // 事务
 		resp, err = this.dbTx.ExecTx(this.finalSql)
 	}
 
@@ -455,9 +484,11 @@ func (this *SqlBuider) SaveObj(_resp interface{}) (int64, error) {
 	return resp, nil
 }
 
-/**
-  删除语句.
-  @return 删除个数, 错误
+/*
+*
+
+	删除语句.
+	@return 删除个数, 错误
 */
 func (this *SqlBuider) Del() (int64, error) {
 
@@ -483,10 +514,12 @@ func (this *SqlBuider) Del() (int64, error) {
 	return resp, err
 }
 
-/**
-  事务更新语句.
-  @param data map[string] string 需要更新字段列表
-  @return 修改成功个数, 错误
+/*
+*
+
+	事务更新语句.
+	@param data map[string] string 需要更新字段列表
+	@return 修改成功个数, 错误
 */
 func (this *SqlBuider) SaveTx(data map[string]interface{}) (int64, error) {
 
@@ -523,9 +556,11 @@ func (this *SqlBuider) SaveTx(data map[string]interface{}) (int64, error) {
 	return resp, err
 }
 
-/**
-  初始化整个表.
-  @return 返回是否发生错误
+/*
+*
+
+	初始化整个表.
+	@return 返回是否发生错误
 */
 func (this *SqlBuider) Truncate() error {
 
@@ -546,10 +581,12 @@ func (this *SqlBuider) Truncate() error {
 	return err
 }
 
-/**
-  添加语句
-  @param data map[string] string 需要添加的字段列表
-  @return 最后一条添加的id
+/*
+*
+
+	添加语句
+	@param data map[string] string 需要添加的字段列表
+	@return 最后一条添加的id
 */
 func (this *SqlBuider) Add(data map[string]interface{}) (int64, error) {
 
@@ -608,12 +645,12 @@ func (this *SqlBuider) Add(data map[string]interface{}) (int64, error) {
 	return resp, err
 }
 
+/*
+*
 
-
-/**
-  批量添加语句
-  @param data map[string] string 需要添加的字段列表
-  @return 最后一条添加的id
+	批量添加语句
+	@param data map[string] string 需要添加的字段列表
+	@return 最后一条添加的id
 */
 func (this *SqlBuider) AddMulti(_list []map[string]interface{}) (int64, error) {
 
@@ -643,7 +680,7 @@ func (this *SqlBuider) AddMulti(_list []map[string]interface{}) (int64, error) {
 
 			valueArr[idx] = fmt.Sprintf("'%v'", val)
 		}
-		valueList = append(valueList, "(" + strings.Join(valueArr, ",") + ")")
+		valueList = append(valueList, "("+strings.Join(valueArr, ",")+")")
 	}
 
 	if len(valueList) == 0 || len(fieldstr) == 0 {
@@ -680,10 +717,12 @@ func (this *SqlBuider) AddMulti(_list []map[string]interface{}) (int64, error) {
 	return resp, err
 }
 
-/**
-  添加语句
-  @param data map[string] string 需要添加的字段列表
-  @return 最后一条添加的id
+/*
+*
+
+	添加语句
+	@param data map[string] string 需要添加的字段列表
+	@return 最后一条添加的id
 */
 func (this *SqlBuider) Replace(data map[string]interface{}) (int64, error) {
 
@@ -728,10 +767,12 @@ func (this *SqlBuider) Replace(data map[string]interface{}) (int64, error) {
 	return resp, err
 }
 
-/**
-  事务添加语句
-  @param data map[string] string 需要添加的字段列表
-  @return 最后一条添加的id
+/*
+*
+
+	事务添加语句
+	@param data map[string] string 需要添加的字段列表
+	@return 最后一条添加的id
 */
 func (this *SqlBuider) AddTx(data map[string]interface{}) (int64, error) {
 
@@ -791,12 +832,14 @@ func (this *SqlBuider) AddTx(data map[string]interface{}) (int64, error) {
 	return resp, errors.New(fmt.Sprintf("%v,SQL:%v", err, sqlStr))
 }
 
-/**
-  添加字段
-  @param col string 字段名称
-  @param tpname string 字段类型
-  @param isnull bool 是否为空
-  @param comment string 备注
+/*
+*
+
+	添加字段
+	@param col string 字段名称
+	@param tpname string 字段类型
+	@param isnull bool 是否为空
+	@param comment string 备注
 */
 func (this *SqlBuider) AddColumn(col string, tpname string, isnull bool, defval string, comment string) *SqlBuider {
 
@@ -811,19 +854,23 @@ func (this *SqlBuider) AddColumn(col string, tpname string, isnull bool, defval 
 	return this
 }
 
-/**
-  删除字段
-  @param col 字段名称
+/*
+*
+
+	删除字段
+	@param col 字段名称
 */
 func (this *SqlBuider) RemoveColumn(col string) *SqlBuider {
 	this.removeColumns = append(this.removeColumns, col)
 	return this
 }
 
-/**
-  设置为主键
-  col : 需要设置为主键的字段名称
-  auto : 是否自动递增
+/*
+*
+
+	设置为主键
+	col : 需要设置为主键的字段名称
+	auto : 是否自动递增
 */
 func (this *SqlBuider) SetId(col string, autoInc bool) *SqlBuider {
 	for key, val := range this.addColumns {
@@ -843,10 +890,12 @@ func (this *SqlBuider) SetId(col string, autoInc bool) *SqlBuider {
 	return this
 }
 
-/**
-  添加索引
-  cols: 要添加的索引，用逗号隔开
-  unique: 是否不重复
+/*
+*
+
+	添加索引
+	cols: 要添加的索引，用逗号隔开
+	unique: 是否不重复
 */
 func (this *SqlBuider) AddIndex(cols string, unique bool) *SqlBuider {
 	indexStr := ""
@@ -860,17 +909,21 @@ func (this *SqlBuider) AddIndex(cols string, unique bool) *SqlBuider {
 	return this
 }
 
-/**
-  移除索引
+/*
+*
+
+	移除索引
 */
 func (this *SqlBuider) RemoveIndex(cols string) *SqlBuider {
 	this.removeIndexs = append(this.removeIndexs, cols)
 	return this
 }
 
-/**
-  创建表格
-  overWrite: 是否覆盖, 如果为true则会先删除原先的表
+/*
+*
+
+	创建表格
+	overWrite: 是否覆盖, 如果为true则会先删除原先的表
 */
 func (this *SqlBuider) CreateTable(overWrite bool) bool {
 	//生成整个表格的SQL
@@ -1049,7 +1102,8 @@ func (this *SqlBuider) Union(tablename string) *SqlBuider {
 	return this
 }
 
-/**
+/*
+*
 左内联
 @param _tableName string 表名
 @param _joinCondition string 条件
@@ -1062,7 +1116,8 @@ func (this *SqlBuider) LeftJoin(_tableName string, _joinCondition string) *SqlBu
 	return this
 }
 
-/**
+/*
+*
 右内联
 @param _tableName string 表名
 @param _joinCondition string 条件
@@ -1076,7 +1131,7 @@ func (this *SqlBuider) RightJoin(_tableName string, _joinCondition string) *SqlB
 }
 
 /*
-	获取sql语句
+获取sql语句
 */
 func (this *SqlBuider) GetLastSql() string {
 	return this.finalSql
@@ -1196,7 +1251,7 @@ func (this *SqlBuider) AddObj(_resp interface{}, _include_primary bool) (int64, 
 	}
 
 	sqlStr := fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES('%v') %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, "','"), onDuplicateStr.String())
-	
+
 	this.finalSql = sqlStr
 	var resp int64
 	var err error
@@ -1216,8 +1271,6 @@ func (this *SqlBuider) AddObj(_resp interface{}, _include_primary bool) (int64, 
 
 	return resp, nil
 }
-
-
 
 // 获取查找
 func (this *SqlBuider) AddObjMulti(_resp []interface{}, _includePrimary bool) (int64, error) {
