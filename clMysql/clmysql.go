@@ -3,7 +3,7 @@ package clMysql
 /**
  *	高性能数据库封装类
  *
- * 
+ *
  */
 import (
 	"crypto/md5"
@@ -11,27 +11,24 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/xiaolan580230/clUtil/clSuperMap"
+	"github.com/lionhart580230/clUtil/clSuperMap"
 	"strings"
 )
-
 
 var clconnections ClmysqlConnections
 var cacheMgr *DbCacheMgr
 var curdbname string
 
-
 func init() {
 
 	// 初始化连接池
-	clconnections.master = make(map[string] *clmysqlStatus)
-	clconnections.slaver = make(map[string] *clmysqlStatus)
+	clconnections.master = make(map[string]*clmysqlStatus)
+	clconnections.slaver = make(map[string]*clmysqlStatus)
 	cacheMgr = NewCacheMgr()
-	DBPointerPool = make(map[string] *DBPointer)
+	DBPointerPool = make(map[string]*DBPointer)
 
 	go clconnections.StartToCheck()
 }
-
 
 // 新增主库
 func AddMaster(key string, dbHost string, dbUser string, dbPass string, dbName string, limit uint16) error {
@@ -43,9 +40,8 @@ func AddSlaver(key string, dbHost string, dbUser string, dbPass string, dbName s
 	return clconnections.AddSlaver(key, dbHost, dbUser, dbPass, dbName, readOnly, limit)
 }
 
-
 // 内部查询用
-func query(sqlstr string, curdb *sql.DB) ([]*clSuperMap.SuperMap , error) {
+func query(sqlstr string, curdb *sql.DB) ([]*clSuperMap.SuperMap, error) {
 	row, err := curdb.Query(sqlstr)
 	if err != nil {
 		return nil, err
@@ -59,24 +55,23 @@ func query(sqlstr string, curdb *sql.DB) ([]*clSuperMap.SuperMap , error) {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	result := make([] *clSuperMap.SuperMap, 0)
+	result := make([]*clSuperMap.SuperMap, 0)
 	for row.Next() {
 		records := clSuperMap.NewSuperMap()
-		row.Scan(scanArgs...)		// 获取扫描后的数组
+		row.Scan(scanArgs...) // 获取扫描后的数组
 		for i, col := range values {
 			if col == nil {
 				continue
 			}
-			records.Add(columns[i], string(col.([] byte)))
+			records.Add(columns[i], string(col.([]byte)))
 		}
 		result = append(result, records)
 	}
 	return result, nil
 }
 
-
 // 内部查询用
-func queryTx(sqlstr string, tx *sql.Tx) ([] *clSuperMap.SuperMap, error) {
+func queryTx(sqlstr string, tx *sql.Tx) ([]*clSuperMap.SuperMap, error) {
 	row, err := tx.Query(sqlstr)
 	if err != nil {
 		return nil, err
@@ -90,34 +85,33 @@ func queryTx(sqlstr string, tx *sql.Tx) ([] *clSuperMap.SuperMap, error) {
 	for i := range values {
 		scanArgs[i] = &values[i]
 	}
-	result := make([] *clSuperMap.SuperMap, 0)
+	result := make([]*clSuperMap.SuperMap, 0)
 	for row.Next() {
 		records := clSuperMap.NewSuperMap()
-		row.Scan(scanArgs...)		// 获取扫描后的数组
+		row.Scan(scanArgs...) // 获取扫描后的数组
 		for i, col := range values {
 			if col == nil {
 				continue
 			}
-			records.Add(columns[i], string(col.([] byte)))
+			records.Add(columns[i], string(col.([]byte)))
 		}
 		result = append(result, records)
 	}
 	return result, nil
 }
 
-
 /**
  * 普通的数据库查询
  * 不支持自定义主键，但返回的是slice类型，更加精简
  * @param {[type]} sqlstr string 需要查询的数据库语句
  * @param {[type]} cache  int    缓存存在的时间, 单位: 秒
- * 
+ *
  * return
  * @1  结果集
  * @2  结果条数
  * @3  如果有错误发生,这里是错误内容,否则为nil
  */
-func Query(sqlstr string, cache uint32) (*DbResult, error){
+func Query(sqlstr string, cache uint32) (*DbResult, error) {
 
 	cacheKey := string(md5.New().Sum([]byte(fmt.Sprintf("%v", sqlstr))))
 	// 检查缓存
@@ -140,10 +134,10 @@ func Query(sqlstr string, cache uint32) (*DbResult, error){
 	rows, err := query(sqlstr, dbObject.db)
 	dbObject.Close()
 	if err != nil {
-		return  nil, err
+		return nil, err
 	}
 	var result DbResult
-	result.ArrResult = make([] *clSuperMap.SuperMap, 0)
+	result.ArrResult = make([]*clSuperMap.SuperMap, 0)
 	result.Length = uint32(len(rows))
 
 	for _, val := range rows {
@@ -164,7 +158,7 @@ func Query(sqlstr string, cache uint32) (*DbResult, error){
  * @param {[type]} sqlstr string [查询语句]
  * @param {[type]} tx     *Tx    [事务指针]
  */
-func QueryTx (sqlstr string, dtf *DbTransform) (*DbResult, error) {
+func QueryTx(sqlstr string, dtf *DbTransform) (*DbResult, error) {
 
 	row, err := dtf.tx.Query(sqlstr)
 	if err != nil {
@@ -188,12 +182,12 @@ func QueryTx (sqlstr string, dtf *DbTransform) (*DbResult, error) {
 	for row.Next() {
 
 		records := clSuperMap.NewSuperMap()
-		row.Scan(scanArgs...)		// 获取扫描后的数组
+		row.Scan(scanArgs...) // 获取扫描后的数组
 		for i, col := range values {
 			if col == nil {
 				continue
 			}
-			records.Add( columns[i], string(col.([] byte)) )
+			records.Add(columns[i], string(col.([]byte)))
 		}
 		// 把所有结果装载到一个结构里面
 		result.ArrResult = append(result.ArrResult, records)
@@ -206,7 +200,6 @@ func QueryTx (sqlstr string, dtf *DbTransform) (*DbResult, error) {
 
 	return &result, nil
 }
-
 
 /**
  * 事务执行
@@ -250,7 +243,7 @@ func RollBack(tx *DbTransform) {
 /**
  * 执行语句
  */
-func Exec(sqlStr string, args... interface{}) ( int64, error) {
+func Exec(sqlStr string, args ...interface{}) (int64, error) {
 	sqlStr = strings.TrimSpace(fmt.Sprintf(sqlStr, args...))
 	//ss := strings.ToLower(sqlStr)
 	//if strings.Contains(ss, "delete") {
@@ -269,11 +262,10 @@ func Exec(sqlStr string, args... interface{}) ( int64, error) {
 		return 0, errors.New("Connections Is OverFlow Limit!!\n")
 	}
 
-//	if dbObject.dbname != curdbname {//
-//		dbObject.dbname = curdbname
-//		dbObject.db.Exec("USE "+curdbname)
-//	}
-
+	//	if dbObject.dbname != curdbname {//
+	//		dbObject.dbname = curdbname
+	//		dbObject.db.Exec("USE "+curdbname)
+	//	}
 
 	res, err := dbObject.db.Exec(sqlStr)
 	dbObject.Close()
@@ -288,10 +280,11 @@ func Exec(sqlStr string, args... interface{}) ( int64, error) {
 	return res.RowsAffected()
 }
 
+/*
+*
 
-/**
-   更新, 返回更新行数
- */
+	更新, 返回更新行数
+*/
 func Save(sqlStr string) (int64, error) {
 	dbObject := clconnections.SelectMaster("")
 	if dbObject == nil {
@@ -362,7 +355,6 @@ func AddDataTx(tablename string, data map[string]interface{}, tx *DbTransform) (
 	return ExecTx(strSql, tx)
 }
 
-
 /**
  * 获取指定数据库下的所有表名字
  * @param dbname string 获取的数据库名
@@ -381,7 +373,7 @@ func GetTables(dbname string, contain string) ([]string, error) {
 	if contain == "" {
 		querySql = "SHOW TABLES"
 	} else {
-		querySql = "SHOW TABLES LIKE '%"+contain+"%'"
+		querySql = "SHOW TABLES LIKE '%" + contain + "%'"
 	}
 
 	res, err := Query(querySql, 0)
@@ -393,10 +385,10 @@ func GetTables(dbname string, contain string) ([]string, error) {
 	}
 
 	tables := make([]string, res.Length)
-	for i:=0;i<int(res.Length);i++ {
+	for i := 0; i < int(res.Length); i++ {
 		if contain != "" {
 			tables[i] = res.ArrResult[i].GetStr("Tables_in_"+dbname+" (%"+contain+"%)", "")
-		}else{
+		} else {
 			tables[i] = res.ArrResult[i].GetStr("Tables_in_"+dbname, "")
 		}
 	}
@@ -404,11 +396,12 @@ func GetTables(dbname string, contain string) ([]string, error) {
 	return tables, nil
 }
 
+/*
+*
 
-/**
-  是否存在这个表格
- */
-func HasTable(dbname string, tablename string) (bool) {
+	是否存在这个表格
+*/
+func HasTable(dbname string, tablename string) bool {
 	if dbname == "" {
 		dbname = curdbname
 	}
@@ -421,11 +414,10 @@ func HasTable(dbname string, tablename string) (bool) {
 	return false
 }
 
-
 // 切换数据库
 func ToggleDBName(name string) {
 	curdbname = name
-	Exec("USE "+curdbname)
+	Exec("USE " + curdbname)
 }
 
 // 获取当前使用的数据库名称
@@ -450,7 +442,7 @@ func GetDatabases() ([]string, error) {
 	}
 
 	databases := make([]string, res.Length)
-	for i:=0; i < int(res.Length); i++ {
+	for i := 0; i < int(res.Length); i++ {
 		databases[i] = res.ArrResult[i].GetStr("Database", "")
 	}
 	return databases, nil
@@ -475,7 +467,7 @@ func GetDatabasesByPrex(prex string) (map[int]string, error) {
 
 	databases := make(map[int]string)
 	k := 0
-	for i:=0; i < int(res.Length); i++ {
+	for i := 0; i < int(res.Length); i++ {
 		if !strings.HasPrefix(res.ArrResult[i].GetStr("Database", ""), prex) {
 			continue
 		}

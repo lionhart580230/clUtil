@@ -2,12 +2,10 @@ package clTime
 
 import (
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clCommon"
+	"github.com/lionhart580230/clUtil/clCommon"
 	"math"
 	"time"
 )
-
-
 
 // 偏移指定秒数
 func (this *clTimer) AfterSecond(sec uint32) (*clTimer, error) {
@@ -204,7 +202,6 @@ func (this *clTimer) GetDayBetweenWithMSec(offset int) (uint64, uint64) {
 	btime := uint64(int64(begins) + int64(offset*86400000))
 	return btime, btime + (86400-1)*1000
 }
-
 
 // 格式化当前时间文本
 func (this *clTimer) FormatBy(_layout string) string {

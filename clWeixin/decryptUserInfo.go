@@ -4,28 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clCrypt"
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clCrypt"
+	"github.com/lionhart580230/clUtil/clLog"
 	"strings"
 )
 
-
 // 用户水印
 type WxUserInfoWaterMark struct {
-	AppId string `json:"appid"`
+	AppId     string `json:"appid"`
 	Timestamp uint32 `json:"timestamp"`
 }
 
 // 微信用户数据结构
 type WxUserInfo struct {
-	OpenId string `json:"openId"`
-	Nickname string `json:"nickName"`
-	Gender uint32 `json:"gender"`
-	City string `json:"city"`
-	Province string `json:"province"`
-	Country string `json:"country"`
-	AvatarUrl string `json:"avatarUrl"`
-	UnionId string `json:"unionId"`
+	OpenId    string              `json:"openId"`
+	Nickname  string              `json:"nickName"`
+	Gender    uint32              `json:"gender"`
+	City      string              `json:"city"`
+	Province  string              `json:"province"`
+	Country   string              `json:"country"`
+	AvatarUrl string              `json:"avatarUrl"`
+	UnionId   string              `json:"unionId"`
 	WaterMark WxUserInfoWaterMark `json:"watermark"`
 }
 
@@ -37,8 +36,8 @@ func DecryptUserInfo(_buffer, _key, _iv string) (*WxUserInfo, error) {
 	_key = strings.ReplaceAll(_key, " ", "+")
 
 	//dData := clCrypt.Base64Decode( _buffer )
-	dIv := clCrypt.Base64Decode( _iv )
-	dKey := clCrypt.Base64Decode( _key )
+	dIv := clCrypt.Base64Decode(_iv)
+	dKey := clCrypt.Base64Decode(_key)
 
 	bufferResp := clCrypt.AesCBCDecode([]byte(_buffer), dKey, dIv)
 	clLog.Info("bufferResp: %v", bufferResp)

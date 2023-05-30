@@ -4,18 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clSuperMap"
+	"github.com/lionhart580230/clUtil/clSuperMap"
 	"strings"
 )
 
-
 type ClTranslate struct {
-	tx *sql.Tx
+	tx     *sql.Tx
 	DBName string
 }
 
 // 查询事务
-func (this *ClTranslate) QueryTx(sqlstr string, args... interface{}) (*DbResult, error) {
+func (this *ClTranslate) QueryTx(sqlstr string, args ...interface{}) (*DbResult, error) {
 
 	if this.tx == nil {
 		return nil, errors.New("错误: 事务指针为空")
@@ -30,7 +29,7 @@ func (this *ClTranslate) QueryTx(sqlstr string, args... interface{}) (*DbResult,
 		return nil, err
 	}
 	var result DbResult
-	result.ArrResult = make([] *clSuperMap.SuperMap, 0)
+	result.ArrResult = make([]*clSuperMap.SuperMap, 0)
 	result.Length = uint32(len(rows))
 
 	for _, val := range rows {
@@ -40,10 +39,8 @@ func (this *ClTranslate) QueryTx(sqlstr string, args... interface{}) (*DbResult,
 	return &result, nil
 }
 
-
-
 // 执行事务
-func (this *ClTranslate)ExecTx(sqlstr string, args... interface{}) (int64, error) {
+func (this *ClTranslate) ExecTx(sqlstr string, args ...interface{}) (int64, error) {
 
 	if this.tx == nil {
 		return 0, errors.New("错误: 事务指针为 nil pointer")
@@ -65,36 +62,33 @@ func (this *ClTranslate)ExecTx(sqlstr string, args... interface{}) (int64, error
 	return res.RowsAffected()
 }
 
-
-
 // 提交事务
 func (this *ClTranslate) Commit() error {
 	return this.tx.Commit()
 }
-
 
 // 回滚事务
 func (this *ClTranslate) Rollback() error {
 	return this.tx.Rollback()
 }
 
-
 // 使用DBPointer进行构建器创建
 func (this *ClTranslate) NewBuilder() *SqlBuider {
 
 	sqlbuild := SqlBuider{
-		dbTx: this,
+		dbTx:   this,
 		dbType: 2,
 		dbname: this.DBName,
 	}
 	return &sqlbuild
 }
 
+/*
+*
 
-/**
-  是否存在这个表格
- */
-func (this *ClTranslate) HasTable(tablename string) (bool) {
+	是否存在这个表格
+*/
+func (this *ClTranslate) HasTable(tablename string) bool {
 
 	var tables, _ = this.GetTables(tablename)
 	for _, val := range tables {
@@ -105,7 +99,6 @@ func (this *ClTranslate) HasTable(tablename string) (bool) {
 	return false
 }
 
-
 /**
  * 获取指定数据库下的所有表名字
  * @param dbname string 获取的数据库名
@@ -114,13 +107,13 @@ func (this *ClTranslate) HasTable(tablename string) (bool) {
  * @1 数据表数组
  * @2 数据库
  */
-func (this *ClTranslate)GetTables(contain string) ([]string, error) {
+func (this *ClTranslate) GetTables(contain string) ([]string, error) {
 
 	querySql := ""
 	if contain == "" {
 		querySql = "SHOW TABLES"
 	} else {
-		querySql = "SHOW TABLES LIKE '%"+contain+"%'"
+		querySql = "SHOW TABLES LIKE '%" + contain + "%'"
 	}
 
 	res, err := this.QueryTx(querySql)
@@ -133,10 +126,10 @@ func (this *ClTranslate)GetTables(contain string) ([]string, error) {
 	}
 
 	tables := make([]string, res.Length)
-	for i:=0;i<int(res.Length);i++ {
+	for i := 0; i < int(res.Length); i++ {
 		if contain != "" {
 			tables[i] = res.ArrResult[i].GetStr("Tables_in_"+this.DBName+" (%"+contain+"%)", "")
-		}else{
+		} else {
 			tables[i] = res.ArrResult[i].GetStr("Tables_in_"+this.DBName, "")
 		}
 	}

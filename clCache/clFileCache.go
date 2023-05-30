@@ -2,28 +2,26 @@ package clCache
 
 import (
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clCommon"
-	"github.com/xiaolan580230/clUtil/clFile"
+	"github.com/lionhart580230/clUtil/clCommon"
+	"github.com/lionhart580230/clUtil/clFile"
 	"io/ioutil"
 	"strings"
 	"sync"
 )
 
 type FileCache struct {
-	fileName string
-	data map[string] string
+	fileName   string
+	data       map[string]string
 	dataLocker sync.RWMutex
 }
-
 
 // 新建一个缓存对象
 func New(_fileName string) *FileCache {
 	return &FileCache{
 		fileName: _fileName,
-		data: make(map[string] string),
+		data:     make(map[string]string),
 	}
 }
-
 
 // 保存到磁盘
 func (this *FileCache) SaveTo() {
@@ -34,9 +32,8 @@ func (this *FileCache) SaveTo() {
 	ioutil.WriteFile(this.fileName, []byte(fileBuffer.String()), 0644)
 }
 
-
 // 移除key
-func (this *FileCache)DelKey(_key string) {
+func (this *FileCache) DelKey(_key string) {
 	var fullMap = this.GetFullMap()
 
 	this.dataLocker.Lock()
@@ -47,7 +44,7 @@ func (this *FileCache)DelKey(_key string) {
 }
 
 // 移除keys
-func (this *FileCache)DelKeys(_keys []string) {
+func (this *FileCache) DelKeys(_keys []string) {
 	var fullMap = this.GetFullMap()
 
 	this.dataLocker.Lock()
@@ -59,8 +56,6 @@ func (this *FileCache)DelKeys(_keys []string) {
 	this.SaveTo()
 }
 
-
-
 // 清空
 func (this *FileCache) Clear() {
 	this.dataLocker.Lock()
@@ -68,7 +63,6 @@ func (this *FileCache) Clear() {
 
 	clFile.DelFile(this.fileName)
 }
-
 
 // 设置值
 func (this *FileCache) SetItem(_key string, _val interface{}) {
@@ -80,7 +74,6 @@ func (this *FileCache) SetItem(_key string, _val interface{}) {
 	this.data = fullMap
 	this.SaveTo()
 }
-
 
 // 获取整个map
 func (this *FileCache) GetFullMap() map[string]string {
@@ -103,7 +96,6 @@ func (this *FileCache) GetFullMap() map[string]string {
 	}
 	return dataMap
 }
-
 
 // 获取值
 func (this *FileCache) GetStr(_key string) string {
@@ -128,9 +120,8 @@ func (this *FileCache) GetStr(_key string) string {
 	return ""
 }
 
-
 // 获取整数型
-func (this *FileCache)GetInt32(_key string) int32 {
+func (this *FileCache) GetInt32(_key string) int32 {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return 0
@@ -139,7 +130,7 @@ func (this *FileCache)GetInt32(_key string) int32 {
 }
 
 // 获取整数型
-func (this *FileCache)GetUint32(_key string) uint32 {
+func (this *FileCache) GetUint32(_key string) uint32 {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return 0
@@ -148,7 +139,7 @@ func (this *FileCache)GetUint32(_key string) uint32 {
 }
 
 // 获取整数型
-func (this *FileCache)GetInt64(_key string) int64 {
+func (this *FileCache) GetInt64(_key string) int64 {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return 0
@@ -157,7 +148,7 @@ func (this *FileCache)GetInt64(_key string) int64 {
 }
 
 // 获取整数型
-func (this *FileCache)GetUint64(_key string) uint64 {
+func (this *FileCache) GetUint64(_key string) uint64 {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return 0
@@ -166,7 +157,7 @@ func (this *FileCache)GetUint64(_key string) uint64 {
 }
 
 // 获取浮点数
-func (this *FileCache)GetFloat64(_key string) float64 {
+func (this *FileCache) GetFloat64(_key string) float64 {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return 0
@@ -174,8 +165,7 @@ func (this *FileCache)GetFloat64(_key string) float64 {
 	return clCommon.Float64(str)
 }
 
-
-func (this *FileCache)GetFloat32(_key string) float32 {
+func (this *FileCache) GetFloat32(_key string) float32 {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return 0
@@ -183,9 +173,8 @@ func (this *FileCache)GetFloat32(_key string) float32 {
 	return clCommon.Float32(str)
 }
 
-
 // 获取布尔
-func (this *FileCache)GetBool(_key string) bool {
+func (this *FileCache) GetBool(_key string) bool {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return false
@@ -193,14 +182,11 @@ func (this *FileCache)GetBool(_key string) bool {
 	return clCommon.Bool(str)
 }
 
-
 // 获取列表
-func (this *FileCache)GetSplit(_key string, _sep string) []string {
+func (this *FileCache) GetSplit(_key string, _sep string) []string {
 	var str = this.GetStr(_key)
 	if str == "" {
 		return []string{}
 	}
 	return strings.Split(str, _sep)
 }
-
-

@@ -1,7 +1,7 @@
 package clWeixin
 
 import (
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clLog"
 	"testing"
 )
 
@@ -12,7 +12,6 @@ func TestCode2Session(t *testing.T) {
 	obj, _ := Code2Session(APP_ID, APP_SECRET, "0939pPkl2QxUv84eAbol2m2IhQ09pPkI")
 	clLog.Info("%+v", obj)
 }
-
 
 func TestGetAccessToken(t *testing.T) {
 	obj, err := GetAccessToken(APP_ID, APP_SECRET)
