@@ -2,9 +2,9 @@ package clFeishuBot
 
 import (
 	"encoding/json"
-	"github.com/xiaolan580230/clUtil/clHttpClient"
-	"github.com/xiaolan580230/clUtil/clJson"
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clHttpClient"
+	"github.com/lionhart580230/clUtil/clJson"
+	"github.com/lionhart580230/clUtil/clLog"
 )
 
 func SendText(_botId string, _content string) {

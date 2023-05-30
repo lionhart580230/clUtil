@@ -2,10 +2,9 @@ package clCrypt
 
 import (
 	"github.com/farmerx/gorsa"
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clLog"
 	"strings"
 )
-
 
 // 简单的RSA加密
 func RSAEncode(_data []byte, _publicKey string) (error, string) {
@@ -23,7 +22,6 @@ func RSAEncode(_data []byte, _publicKey string) (error, string) {
 	// 最后base64加密
 	return nil, Base64Encode(signBuffer)
 }
-
 
 // 简单的RSA解密
 func RSADecode(_data string, _privateKey string) (error, []byte) {
@@ -43,8 +41,6 @@ func RSADecode(_data string, _privateKey string) (error, []byte) {
 	return nil, rawDecode
 }
 
-
-
 func WrapPublicKey(_keyContent string) string {
 	keyStr := strings.Builder{}
 	if !strings.HasPrefix(_keyContent, "-----BEGIN PUBLIC KEY-----") {
@@ -60,7 +56,6 @@ func WrapPublicKey(_keyContent string) string {
 	}
 	return keyStr.String()
 }
-
 
 func WrapPrivateKey(_keyContent string) string {
 	keyStr := strings.Builder{}

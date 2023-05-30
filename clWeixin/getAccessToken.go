@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clHttpClient"
+	"github.com/lionhart580230/clUtil/clHttpClient"
 	"sync"
 	"time"
 )
@@ -15,9 +15,9 @@ var mLocker sync.RWMutex
 
 type GetAccessTokenResp struct {
 	AccessToken string `json:"access_token"`
-	ExpiresIn uint32 `json:"expires_in"`
-	ErrCode uint32 `json:"errcode"`
-	ErrMsg string `json:"errmsg"`
+	ExpiresIn   uint32 `json:"expires_in"`
+	ErrCode     uint32 `json:"errcode"`
+	ErrMsg      string `json:"errmsg"`
 }
 
 func GetAccessToken(_appId string, _secret string) (string, error) {
@@ -35,7 +35,7 @@ func GetAccessToken(_appId string, _secret string) (string, error) {
 	client.AddParam("secret", _secret)
 	resp, err := client.Do()
 	if err != nil {
-		return  "", err
+		return "", err
 	}
 	var respObj GetAccessTokenResp
 	if err := json.Unmarshal([]byte(resp.Body), &respObj); err != nil {

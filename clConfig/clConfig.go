@@ -1,21 +1,21 @@
 package clConfig
 
 import (
-	"github.com/xiaolan580230/clUtil/clLog"
-	"github.com/xiaolan580230/clUtil/clSuperMap"
+	"github.com/lionhart580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clSuperMap"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 )
 
-var mConfig map[string] *clSuperMap.SuperMap
-var aConfig map[string] []string
-func init() {
-	mConfig = make(map[string] *clSuperMap.SuperMap)
-	aConfig = make(map[string] []string)
-}
+var mConfig map[string]*clSuperMap.SuperMap
+var aConfig map[string][]string
 
+func init() {
+	mConfig = make(map[string]*clSuperMap.SuperMap)
+	aConfig = make(map[string][]string)
+}
 
 // 通过文件加载配置
 // 调用多次后面的会覆盖前面
@@ -29,9 +29,9 @@ func LoadFromFile(_filename string, _overWrite bool) error {
 
 	section := "global"
 	if _overWrite {
-		mConfig = make(map[string] *clSuperMap.SuperMap)
+		mConfig = make(map[string]*clSuperMap.SuperMap)
 		mConfig[section] = clSuperMap.NewSuperMap()
-		aConfig = make(map[string] []string)
+		aConfig = make(map[string][]string)
 		aConfig[section] = make([]string, 0)
 	}
 
@@ -43,7 +43,7 @@ func LoadFromFile(_filename string, _overWrite bool) error {
 		}
 
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
-			section = strings.TrimPrefix(strings.TrimSuffix(line,"]"),"[")
+			section = strings.TrimPrefix(strings.TrimSuffix(line, "]"), "[")
 			mConfig[section] = clSuperMap.NewSuperMap()
 			aConfig[section] = make([]string, 0)
 			continue
@@ -60,8 +60,6 @@ func LoadFromFile(_filename string, _overWrite bool) error {
 	}
 	return nil
 }
-
-
 
 // 获取Uint32配置
 func GetUint32(_key string, _def uint32) uint32 {
@@ -83,7 +81,6 @@ func GetUint32(_key string, _def uint32) uint32 {
 	return configItem.GetUInt32(_key[idx+1:], _def)
 }
 
-
 // 获取Uint64配置
 func GetUint64(_key string, _def uint64) uint64 {
 	if os.Getenv(_key) != "" {
@@ -103,7 +100,6 @@ func GetUint64(_key string, _def uint64) uint64 {
 	}
 	return configItem.GetUInt64(_key[idx+1:], _def)
 }
-
 
 // 获取int32配置
 func GetInt32(_key string, _def int32) int32 {
@@ -125,7 +121,6 @@ func GetInt32(_key string, _def int32) int32 {
 	return configItem.GetInt32(_key[idx+1:], _def)
 }
 
-
 // 获取int64配置
 func GetInt64(_key string, _def int64) int64 {
 	if os.Getenv(_key) != "" {
@@ -145,7 +140,6 @@ func GetInt64(_key string, _def int64) int64 {
 	}
 	return configItem.GetInt64(_key[idx+1:], _def)
 }
-
 
 // 获取bool配置
 func GetBool(_key string, _def bool) bool {
@@ -167,7 +161,6 @@ func GetBool(_key string, _def bool) bool {
 	return configItem.GetBool(_key[idx+1:], _def)
 }
 
-
 // 获取Str配置
 func GetStr(_key string, _def string) string {
 	if os.Getenv(_key) != "" {
@@ -184,7 +177,6 @@ func GetStr(_key string, _def string) string {
 	}
 	return configItem.GetStr(_key[idx+1:], _def)
 }
-
 
 // 获取Float32配置
 func GetFloat32(_key string, _def float32) float32 {
@@ -206,7 +198,6 @@ func GetFloat32(_key string, _def float32) float32 {
 	return configItem.GetFloat32(_key[idx+1:], _def)
 }
 
-
 // 获取Float32配置
 func GetFloat64(_key string, _def float64) float64 {
 	if os.Getenv(_key) != "" {
@@ -227,7 +218,6 @@ func GetFloat64(_key string, _def float64) float64 {
 	return configItem.GetFloat64(_key[idx+1:], _def)
 }
 
-
 // 获取Arr配置
 func GetStrArray(_key string) []string {
 	configItem, exists := aConfig[_key]
@@ -236,7 +226,6 @@ func GetStrArray(_key string) []string {
 	}
 	return configItem
 }
-
 
 // 获取Arr配置
 func GetMap(_key string) map[string]string {

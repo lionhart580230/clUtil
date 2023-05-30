@@ -2,7 +2,7 @@ package clMysql
 
 import (
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clSuperMap"
+	"github.com/lionhart580230/clUtil/clSuperMap"
 	"reflect"
 	"strings"
 )
@@ -115,7 +115,7 @@ func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
 	for i := 0; i < _type.NumField(); i++ {
 
 		if _type.Field(i).Name[0] >= 97 {
-			continue	// 小写的过滤掉
+			continue // 小写的过滤掉
 		}
 
 		if !_primary {
@@ -139,7 +139,6 @@ func GetInsertSql(_val interface{}, _primary bool) ([]string, []string) {
 	return _fields, _values
 }
 
-
 // 根据数据结构取得字段列表
 func GetInsertSqlMulti(_dataList []interface{}, _primary bool) ([]string, []string) {
 
@@ -156,7 +155,7 @@ func GetInsertSqlMulti(_dataList []interface{}, _primary bool) ([]string, []stri
 		for i := 0; i < _type.NumField(); i++ {
 
 			if _type.Field(i).Name[0] >= 97 {
-				continue	// 小写的过滤掉
+				continue // 小写的过滤掉
 			}
 
 			if !_primary {
@@ -184,7 +183,6 @@ func GetInsertSqlMulti(_dataList []interface{}, _primary bool) ([]string, []stri
 	return _fields, _valueList
 }
 
-
 // 根据数据结构取得字段列表
 func GetUpdateSql(_val interface{}, _primary bool) []string {
 
@@ -196,7 +194,7 @@ func GetUpdateSql(_val interface{}, _primary bool) []string {
 	for i := 0; i < _type.NumField(); i++ {
 
 		if _type.Field(i).Name[0] >= 97 {
-			continue	// 小写的过滤掉
+			continue // 小写的过滤掉
 		}
 
 		if !_primary {
@@ -216,7 +214,7 @@ func GetUpdateSql(_val interface{}, _primary bool) []string {
 			continue
 		}
 
-		_fields = append(_fields, fmt.Sprintf("`%v` = '%v'", fileName, fieldValue) )
+		_fields = append(_fields, fmt.Sprintf("`%v` = '%v'", fileName, fieldValue))
 	}
 	return _fields
 }

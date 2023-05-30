@@ -1,34 +1,32 @@
 package clMysql
 
 import (
-	"github.com/xiaolan580230/clUtil/clSuperMap"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/lionhart580230/clUtil/clSuperMap"
 	"strings"
 	"sync"
 	"time"
 )
 
-
 type DBPointer struct {
-	conn *sql.DB
-	dbname string
-	isconnect bool
-	lastErr string
-	lastSql string
-	key string
-	Dbname string	//数据库名字,外部调用
+	conn       *sql.DB
+	dbname     string
+	isconnect  bool
+	lastErr    string
+	lastSql    string
+	key        string
+	Dbname     string //数据库名字,外部调用
 	lastupdate uint32
 }
 
-func (this DBPointer)IsUsefull() bool {
+func (this DBPointer) IsUsefull() bool {
 	return this.isconnect
 }
 
-var DBPointerPool map[string] *DBPointer
+var DBPointerPool map[string]*DBPointer
 var DBPointerPoolLocker sync.Mutex
-
 
 // 通过连线配置返回一个连线结构
 // @param host string 连线ip
@@ -50,23 +48,23 @@ func NewDB(host string, user string, pass string, dbname string) (*DBPointer, er
 	dbp.SetMaxOpenConns(30)
 	//dbp.SetMaxOpenConns(0) // TODO 暂时增加到60
 	dbp.SetMaxIdleConns(10)
-	dbp.SetConnMaxLifetime(4*time.Hour)
+	dbp.SetConnMaxLifetime(4 * time.Hour)
 
 	object := DBPointer{
-		conn: dbp,
-		dbname: dbname,
-		isconnect: true,
-		key: host+user+dbname,
-		Dbname:dbname,
+		conn:       dbp,
+		dbname:     dbname,
+		isconnect:  true,
+		key:        host + user + dbname,
+		Dbname:     dbname,
 		lastupdate: uint32(time.Now().Unix()),
 	}
 	return &object, nil
 }
 
 type DBOpitions struct {
-	MaxConnection uint32
+	MaxConnection  uint32
 	IdleConnection uint32
-	MaxLifeTime uint32
+	MaxLifeTime    uint32
 }
 
 // 通过连线配置返回一个连线结构
@@ -86,28 +84,26 @@ func NewWithOpt(host string, user string, pass string, dbname string, _opt DBOpi
 		return nil, err
 	}
 
-	dbp.SetMaxOpenConns( int(_opt.MaxConnection) )
+	dbp.SetMaxOpenConns(int(_opt.MaxConnection))
 	//dbp.SetMaxOpenConns(0) // TODO 暂时增加到60
-	dbp.SetMaxIdleConns( int(_opt.IdleConnection) )
+	dbp.SetMaxIdleConns(int(_opt.IdleConnection))
 	dbp.SetConnMaxLifetime(time.Duration(_opt.MaxLifeTime) * time.Second)
 
 	object := DBPointer{
-		conn: dbp,
-		dbname: dbname,
-		isconnect: true,
-		key: host+user+dbname,
-		Dbname:dbname,
+		conn:       dbp,
+		dbname:     dbname,
+		isconnect:  true,
+		key:        host + user + dbname,
+		Dbname:     dbname,
 		lastupdate: uint32(time.Now().Unix()),
 	}
 	return &object, nil
 }
 
-
 // 设置最大空闲连接数,0为不限制
 func (this *DBPointer) SetMaxIdleConns(conns int) {
 	this.conn.SetMaxIdleConns(conns)
 }
-
 
 // 设置数据库
 func (this *DBPointer) UseDB(dbname string) {
@@ -115,7 +111,7 @@ func (this *DBPointer) UseDB(dbname string) {
 	this.Dbname = dbname
 }
 
-func NewDBSimple(host string, user string, pass string, dbname string) (*DBPointer) {
+func NewDBSimple(host string, user string, pass string, dbname string) *DBPointer {
 
 	dbp, err := sql.Open("mysql", user+":"+pass+"@tcp("+host+")/"+dbname+"?charset=utf8")
 	if err != nil {
@@ -132,17 +128,16 @@ func NewDBSimple(host string, user string, pass string, dbname string) (*DBPoint
 	//dbp.SetConnMaxLifetime(10*time.Minute)
 
 	object := DBPointer{
-		conn: dbp,
-		dbname: dbname,
-		isconnect: true,
-		key: host+user+dbname,
-		Dbname:dbname,
+		conn:       dbp,
+		dbname:     dbname,
+		isconnect:  true,
+		key:        host + user + dbname,
+		Dbname:     dbname,
 		lastupdate: uint32(time.Now().Unix()),
 	}
 
 	return &object
 }
-
 
 // 查看数据库状态..
 func (this *DBPointer) UpdateStatus() bool {
@@ -164,14 +159,13 @@ func (this *DBPointer) Close() {
 	}
 }
 
-
 func (this *DBPointer) StartTrans() (*ClTranslate, error) {
 	myTx, err := this.conn.Begin()
 	if err != nil {
 		return nil, err
 	}
-	return &ClTranslate {
-		tx: myTx,
+	return &ClTranslate{
+		tx:     myTx,
 		DBName: this.Dbname,
 	}, nil
 }
@@ -187,7 +181,7 @@ func (this *DBPointer) StartTrans() (*ClTranslate, error) {
  * @2  结果条数
  * @3  如果有错误发生,这里是错误内容,否则为nil
  */
-func (this *DBPointer) Query(sqlstr string, args... interface{}) (*DbResult, error){
+func (this *DBPointer) Query(sqlstr string, args ...interface{}) (*DbResult, error) {
 
 	lastSql := sqlstr
 	if args != nil && len(args) != 0 {
@@ -212,7 +206,6 @@ func (this *DBPointer) Query(sqlstr string, args... interface{}) (*DbResult, err
 	return &result, nil
 }
 
-
 /**
  * 普通的数据库查询
  * 不支持自定义主键，但返回的是slice类型，更加精简
@@ -227,6 +220,7 @@ func (this *DBPointer) Query(sqlstr string, args... interface{}) (*DbResult, err
 func (this *DBPointer) GetLastSql() string {
 	return this.lastSql
 }
+
 /**
  * 普通的数据库查询
  * 不支持自定义主键，但返回的是slice类型，更加精简
@@ -238,7 +232,7 @@ func (this *DBPointer) GetLastSql() string {
  * @2  结果条数
  * @3  如果有错误发生,这里是错误内容,否则为nil
  */
-func (this *DBPointer) QueryByKey(sqlstr string, key string, args... interface{}) (*DbResult, error){
+func (this *DBPointer) QueryByKey(sqlstr string, key string, args ...interface{}) (*DbResult, error) {
 
 	lastSql := sqlstr
 	if args != nil && len(args) != 0 {
@@ -253,20 +247,18 @@ func (this *DBPointer) QueryByKey(sqlstr string, key string, args... interface{}
 		return nil, err
 	}
 	var result DbResult
-	result.MapResult = make(map[string] *clSuperMap.SuperMap)
+	result.MapResult = make(map[string]*clSuperMap.SuperMap)
 	result.Length = uint32(len(rows))
 
 	for _, val := range rows {
-		result.MapResult[ val.GetStr(key, "") ] =  val
+		result.MapResult[val.GetStr(key, "")] = val
 	}
 
 	return &result, nil
 }
 
-
-
 // 执行
-func (this *DBPointer) Exec(sqlstr string, args... interface{}) (int64, error) {
+func (this *DBPointer) Exec(sqlstr string, args ...interface{}) (int64, error) {
 
 	lastSql := sqlstr
 	if args != nil && len(args) != 0 {
@@ -296,13 +288,10 @@ func (this *DBPointer) Exec(sqlstr string, args... interface{}) (int64, error) {
 	return res.RowsAffected()
 }
 
-
-
 // 获取数据库名称
 func (this *DBPointer) GetDBName() string {
 	return this.dbname
 }
-
 
 /**
  * 获取指定数据库下的所有表名字
@@ -312,7 +301,7 @@ func (this *DBPointer) GetDBName() string {
  * @1 数据表数组
  * @2 数据库
  */
-func (this *DBPointer)GetTables(contain string) ([]string, error) {
+func (this *DBPointer) GetTables(contain string) ([]string, error) {
 
 	dbname := this.GetDBName()
 
@@ -320,7 +309,7 @@ func (this *DBPointer)GetTables(contain string) ([]string, error) {
 	if contain == "" {
 		querySql = "SHOW TABLES"
 	} else {
-		querySql = "SHOW TABLES LIKE '%"+contain+"%'"
+		querySql = "SHOW TABLES LIKE '%" + contain + "%'"
 	}
 
 	res, err := this.Query(querySql)
@@ -333,10 +322,10 @@ func (this *DBPointer)GetTables(contain string) ([]string, error) {
 	}
 
 	tables := make([]string, res.Length)
-	for i:=0;i<int(res.Length);i++ {
+	for i := 0; i < int(res.Length); i++ {
 		if contain != "" {
 			tables[i] = res.ArrResult[i].GetStr("Tables_in_"+dbname+" (%"+contain+"%)", "")
-		}else{
+		} else {
 			tables[i] = res.ArrResult[i].GetStr("Tables_in_"+dbname, "")
 		}
 	}
@@ -344,11 +333,12 @@ func (this *DBPointer)GetTables(contain string) ([]string, error) {
 	return tables, nil
 }
 
+/*
+*
 
-/**
-  是否存在这个表格
- */
-func (this *DBPointer) HasTable(tablename string) (bool) {
+	是否存在这个表格
+*/
+func (this *DBPointer) HasTable(tablename string) bool {
 
 	var tables, _ = this.GetTables(tablename)
 	for _, val := range tables {
@@ -359,18 +349,20 @@ func (this *DBPointer) HasTable(tablename string) (bool) {
 	return false
 }
 
+/*
+*
 
-/**
-  获取表格信息
+	获取表格信息
 */
 type DBColumnInfo struct {
-	Field string
-	Type string
-	IsNull bool
+	Field   string
+	Type    string
+	IsNull  bool
 	KeyType string
 	Default string
-	Extra string
+	Extra   string
 }
+
 func (this *DBPointer) GetTableColumns(tablename string) ([]DBColumnInfo, error) {
 
 	res, err := this.Query("DESC %v", tablename)
@@ -382,7 +374,7 @@ func (this *DBPointer) GetTableColumns(tablename string) ([]DBColumnInfo, error)
 	}
 
 	columnList := make([]DBColumnInfo, 0)
-	for _, val := range res.ArrResult{
+	for _, val := range res.ArrResult {
 		columnList = append(columnList, DBColumnInfo{
 			Field:   val.GetStr("Field", ""),
 			Type:    val.GetStr("Type", ""),

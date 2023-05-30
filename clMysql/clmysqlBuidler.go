@@ -3,8 +3,8 @@ package clMysql
 import (
 	"errors"
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clCommon"
-	"github.com/xiaolan580230/clUtil/clSuperMap"
+	"github.com/lionhart580230/clUtil/clCommon"
+	"github.com/lionhart580230/clUtil/clSuperMap"
 	"reflect"
 	"strings"
 )

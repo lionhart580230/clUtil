@@ -8,21 +8,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clHttpClient"
-	"github.com/xiaolan580230/clUtil/clJson"
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clHttpClient"
+	"github.com/lionhart580230/clUtil/clJson"
+	"github.com/lionhart580230/clUtil/clLog"
 	"strings"
 	"time"
 )
 
 var (
 	accessToken string
-	updateTime uint32
+	updateTime  uint32
 
-	appId string
-	appSecret string
+	appId      string
+	appSecret  string
 	encryptKey string
-	verifyKey string
+	verifyKey  string
 )
 
 // 初始化信息
@@ -33,10 +33,9 @@ func Init(_appId string, _appSecret string, _encrypt string, _verify string) {
 	verifyKey = _verify
 }
 
-
 // 获取token
 func GetAccessToken() string {
-	if accessToken != "" && uint32(time.Now().Unix()) < updateTime + 360 {
+	if accessToken != "" && uint32(time.Now().Unix()) < updateTime+360 {
 		return accessToken
 	}
 
@@ -44,7 +43,7 @@ func GetAccessToken() string {
 	hc.SetContentType(clHttpClient.ContentJson)
 
 	hc.SetBody(clJson.CreateBy(clJson.M{
-		"app_id": appId,
+		"app_id":     appId,
 		"app_secret": appSecret,
 	}).ToStr())
 
@@ -63,8 +62,6 @@ func GetAccessToken() string {
 	updateTime = uint32(time.Now().Unix())
 	return tokenInfo.AppAccessToken
 }
-
-
 
 // 解密飞书信息
 func DecryptFeishuData(encrypt string) (string, error) {

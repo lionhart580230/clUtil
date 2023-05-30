@@ -2,8 +2,8 @@ package clLog
 
 import (
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clFile"
-	"github.com/xiaolan580230/clUtil/clTime"
+	"github.com/lionhart580230/clUtil/clFile"
+	"github.com/lionhart580230/clUtil/clTime"
 	"runtime"
 	"strings"
 	"time"
@@ -14,17 +14,17 @@ var logMode uint32 = LogModeConsole
 var version string = ""
 var showTime bool = true
 var logFilePath string = ""
+
 const (
-	LogFlagInfo = 1 << 0
-	LogFlagDebug = 1 << 1
+	LogFlagInfo    = 1 << 0
+	LogFlagDebug   = 1 << 1
 	LogFlagWarning = 1 << 2
-	LogFlagError = 1 << 3
-	LogFlagAll = LogFlagInfo | LogFlagWarning | LogFlagDebug | LogFlagError
+	LogFlagError   = 1 << 3
+	LogFlagAll     = LogFlagInfo | LogFlagWarning | LogFlagDebug | LogFlagError
 )
 
-
 const (
-	LogColorOrange = uint8(iota+91)
+	LogColorOrange = uint8(iota + 91)
 	LogColorGreen
 	LogColorYellow
 	LogColorPurple
@@ -39,7 +39,6 @@ const (
 	// 原生模式，不带任何颜色信息
 	LogModeRaw = 1
 )
-
 
 // 设置日志输出模式
 func SetLogMode(_flag uint32) {
@@ -66,42 +65,37 @@ func SetLogFileName(_name string) {
 	logFilePath = _name
 }
 
-
 // 输出Info日志
 func Info(_fmt string, _args ...interface{}) {
-	if logFlag & LogFlagInfo == 0 {
+	if logFlag&LogFlagInfo == 0 {
 		return
 	}
 	print(LogFlagInfo, _fmt, _args...)
 }
 
-
 // 输出Debug日志
 func Debug(_fmt string, _args ...interface{}) {
-	if logFlag & LogFlagDebug == 0 {
+	if logFlag&LogFlagDebug == 0 {
 		return
 	}
 	print(LogFlagDebug, _fmt, _args...)
 }
 
-
 // 输出Warning日志
 func Warning(_fmt string, _args ...interface{}) {
-	if logFlag & LogFlagWarning == 0 {
+	if logFlag&LogFlagWarning == 0 {
 		return
 	}
 	print(LogFlagWarning, _fmt, _args...)
 }
 
-
 // 输出Error日志
 func Error(_fmt string, _args ...interface{}) {
-	if logFlag & LogFlagError == 0 {
+	if logFlag&LogFlagError == 0 {
 		return
 	}
 	print(LogFlagError, _fmt, _args...)
 }
-
 
 // 打印
 func print(_type uint32, _fmt string, _args ...interface{}) {
@@ -114,7 +108,7 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 	debugFile := ""
 	_, file, line, ok := runtime.Caller(2)
 	if ok {
-		fileItems := strings.Split(file,"/")
+		fileItems := strings.Split(file, "/")
 		debugFile = fmt.Sprintf("%v:%v", fileItems[len(fileItems)-1], line)
 	}
 
@@ -143,11 +137,11 @@ func print(_type uint32, _fmt string, _args ...interface{}) {
 	}
 
 	if logMode == LogModeConsole {
-		fmt.Printf("\x1b[0;%dm%v\x1b[0m\n", color, logContent + " " + content)
+		fmt.Printf("\x1b[0;%dm%v\x1b[0m\n", color, logContent+" "+content)
 		return
 	}
 	fmt.Println(logContent + " " + content)
 	if logFilePath != "" {
-		clFile.AppendFile(logFilePath, logContent + " " + content)
+		clFile.AppendFile(logFilePath, logContent+" "+content)
 	}
 }

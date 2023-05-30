@@ -3,7 +3,7 @@
 
 > 如何引用?
 ```
-go get github.com/xiaolan580230/clUtil
+go get github.com/lionhart580230/clUtil
 ```
 
 > 这个工具包能做什么?
