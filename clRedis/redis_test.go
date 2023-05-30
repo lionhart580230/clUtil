@@ -1,7 +1,7 @@
 package clRedis
 
 import (
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clLog"
 	"testing"
 )
 

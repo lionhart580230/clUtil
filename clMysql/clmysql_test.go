@@ -2,7 +2,7 @@ package clMysql
 
 import (
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clLog"
 	"testing"
 )
 
@@ -32,10 +32,9 @@ func TestAddMaster(t *testing.T) {
 	clLog.Debug("生成完毕!")
 }
 
-
 type AddObjData struct {
-	A uint32 `db:"a" primary:"TRUE"`
-	B uint32 `db:"b"`
+	A uint32  `db:"a" primary:"TRUE"`
+	B uint32  `db:"b"`
 	C float64 `db:"c"`
 }
 
@@ -55,30 +54,30 @@ func TestSqlBuider_AddMulti(t *testing.T) {
 
 }
 
-
 type AddObjMultiObj struct {
 	A uint32 `db:"a" primary:"TRUE"`
 	B uint32 `db:"b"`
 	C uint32 `db:"c"`
 }
+
 func TestSqlBuider_AddObjMulti(t *testing.T) {
 	db := NewDBSimple("127.0.0.1", "root", "root", "miner_new")
 	if db == nil {
 		fmt.Printf("connect to mysql failed\n")
 		return
 	}
-	db.NewBuilder().Table("test").AddObjMulti([]interface{} {
-		AddObjMultiObj {
+	db.NewBuilder().Table("test").AddObjMulti([]interface{}{
+		AddObjMultiObj{
 			A: 1,
 			B: 2,
 			C: 3,
 		},
-		AddObjMultiObj {
+		AddObjMultiObj{
 			A: 1,
 			B: 2,
 			C: 3,
 		},
-		AddObjMultiObj {
+		AddObjMultiObj{
 			A: 1,
 			B: 2,
 			C: 3,

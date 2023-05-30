@@ -1,7 +1,7 @@
 package clAliSDK
 
 import (
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clLog"
 	"testing"
 )
 
@@ -14,7 +14,6 @@ func TestApiGetBalance(t *testing.T) {
 
 	clLog.Debug("账号: %v 余额: %v", "video-best", data.Data.AvailableCashAmount)
 }
-
 
 func TestApiGetResourceBalance(t *testing.T) {
 

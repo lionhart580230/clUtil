@@ -1,9 +1,9 @@
 package clTask
 
 import (
-	"github.com/xiaolan580230/clUtil/clLog"
-	"github.com/xiaolan580230/clUtil/clRedis"
-	"github.com/xiaolan580230/clUtil/clTime"
+	"github.com/lionhart580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clRedis"
+	"github.com/lionhart580230/clUtil/clTime"
 	"time"
 )
 
@@ -17,27 +17,25 @@ func NewPool(_redis *clRedis.RedisObject) *TaskPool {
 	}
 }
 
-func GetRedis () *clRedis.RedisObject {
+func GetRedis() *clRedis.RedisObject {
 	return redisPtr
 }
 
-
 // 开始检查任务池中的任务是否得以执行
-func (this *TaskPool) Start () {
+func (this *TaskPool) Start() {
 
 	for {
 
-		nowTime,_ := clTime.NewDate("")
+		nowTime, _ := clTime.NewDate("")
 		todayBegin, _ := nowTime.GetDayBetween(0)
 		for _, val := range this.pool {
-			go val.Run(nowTime.TimeStamp, (nowTime.TimeStamp - todayBegin) % 86400, uint32(1 << (nowTime.Week) ), this.recoverCallback)
+			go val.Run(nowTime.TimeStamp, (nowTime.TimeStamp-todayBegin)%86400, uint32(1<<(nowTime.Week)), this.recoverCallback)
 		}
 
-		<-time.After(1*time.Second)
+		<-time.After(1 * time.Second)
 	}
 
 }
-
 
 // 添加新的计划任务
 func (this *TaskPool) AddNew(task *TaskInfo) {
@@ -45,8 +43,7 @@ func (this *TaskPool) AddNew(task *TaskInfo) {
 	this.pool = append(this.pool, task)
 }
 
-
 // 设置异常捕获回调
-func (this *TaskPool) SetRecoverCallback(_f func( string, string)) {
+func (this *TaskPool) SetRecoverCallback(_f func(string, string)) {
 	this.recoverCallback = _f
 }

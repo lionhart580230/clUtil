@@ -1,11 +1,10 @@
 package clFeishuBot
 
 import (
-	"github.com/xiaolan580230/clUtil/clHttpClient"
-	"github.com/xiaolan580230/clUtil/clJson"
-	"github.com/xiaolan580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clHttpClient"
+	"github.com/lionhart580230/clUtil/clJson"
+	"github.com/lionhart580230/clUtil/clLog"
 )
-
 
 // 发送文本消息到群组
 func SendTextMessageToGroup(_openId string, _content string) {
@@ -16,10 +15,10 @@ func SendTextMessageToGroup(_openId string, _content string) {
 	hc := clHttpClient.NewClient("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id")
 	hc.SetMethod("POST")
 	hc.SetContentType(clHttpClient.ContentJson)
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 	hc.SetBody(clJson.CreateBy(clJson.M{
 		"receive_id": _openId,
-		"msg_type": "text",
+		"msg_type":   "text",
 		"content": clJson.CreateBy(clJson.M{
 			"text": _content,
 		}).ToStr(),
@@ -42,10 +41,10 @@ func SendTextMessageToGroupAtAll(_openId string, _content string) {
 	hc := clHttpClient.NewClient("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id")
 	hc.SetMethod("POST")
 	hc.SetContentType(clHttpClient.ContentJson)
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 	hc.SetBody(clJson.CreateBy(clJson.M{
 		"receive_id": _openId,
-		"msg_type": "text",
+		"msg_type":   "text",
 		"content": clJson.CreateBy(clJson.M{
 			"text": "<at user_id=\"all\">所有人</at> " + _content,
 		}).ToStr(),
@@ -59,8 +58,6 @@ func SendTextMessageToGroupAtAll(_openId string, _content string) {
 	clLog.Debug("发送消息到群组返回: %v", resp.Body)
 }
 
-
-
 // 发送文本到用户
 func SendTextMessageToUser(_openId string, _content string) {
 
@@ -72,10 +69,10 @@ func SendTextMessageToUser(_openId string, _content string) {
 	hc := clHttpClient.NewClient("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id")
 	hc.SetMethod("POST")
 	hc.SetContentType(clHttpClient.ContentJson)
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 	hc.SetBody(clJson.CreateBy(clJson.M{
 		"receive_id": _openId,
-		"msg_type": "text",
+		"msg_type":   "text",
 		"content": clJson.CreateBy(clJson.M{
 			"text": _content,
 		}).ToStr(),
@@ -89,7 +86,6 @@ func SendTextMessageToUser(_openId string, _content string) {
 	clLog.Debug("发送消息到用户返回: %v", resp.Body)
 }
 
-
 // 获取机器人所在群组列表
 func GetRobotInGroupList() {
 	var token = GetAccessToken()
@@ -99,7 +95,7 @@ func GetRobotInGroupList() {
 	}
 	hc := clHttpClient.NewClient("https://open.feishu.cn/open-apis/im/v1/chats")
 	hc.SetMethod("GET")
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 	resp, err := hc.Do()
 	if err != nil {
 		clLog.Error("获取机器人所在群组信息错误: %v", err)
@@ -108,7 +104,6 @@ func GetRobotInGroupList() {
 
 	clLog.Debug("获取机器人所在群组信息: %v", resp.Body)
 }
-
 
 // 发送消息到群组中
 func SendMessageToGroup(_openId string, _content interface{}) {
@@ -120,12 +115,12 @@ func SendMessageToGroup(_openId string, _content interface{}) {
 	hc := clHttpClient.NewClient("https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id")
 	hc.SetMethod("POST")
 	hc.SetContentType(clHttpClient.ContentJson)
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 
 	hc.SetBody(clJson.CreateBy(clJson.M{
 		"receive_id": _openId,
-		"msg_type": "interactive",
-		"content": clJson.CreateBy(_content).ToStr(),
+		"msg_type":   "interactive",
+		"content":    clJson.CreateBy(_content).ToStr(),
 	}).ToStr())
 	resp, err := hc.Do()
 	if err != nil {
@@ -135,7 +130,6 @@ func SendMessageToGroup(_openId string, _content interface{}) {
 
 	clLog.Debug("发送消息到群组返回: %v", resp.Body)
 }
-
 
 // 发送消息给指定的人
 func SendMessageToPerson(_chatId string, _userId string, _card interface{}) {
@@ -148,13 +142,13 @@ func SendMessageToPerson(_chatId string, _userId string, _card interface{}) {
 	hc := clHttpClient.NewClient("https://open.feishu.cn/open-apis/ephemeral/v1/send")
 	hc.SetContentType(clHttpClient.ContentJson)
 	hc.SetMethod("POST")
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 	hc.SetBody(clJson.CreateBy(
 		clJson.M{
-			"chat_id": _chatId,
-			"open_id": _userId,
+			"chat_id":  _chatId,
+			"open_id":  _userId,
 			"msg_type": "interactive",
-			"card": _card,
+			"card":     _card,
 		},
 	).ToStr())
 
@@ -166,7 +160,6 @@ func SendMessageToPerson(_chatId string, _userId string, _card interface{}) {
 
 	clLog.Info("发送消息给指定的人返回: %v", res.Body)
 }
-
 
 // 更新消息
 func UpdateMessageTo(_messageId string, _content interface{}) {
@@ -180,7 +173,7 @@ func UpdateMessageTo(_messageId string, _content interface{}) {
 	hc := clHttpClient.NewClient(url)
 	hc.SetMethod("PATCH")
 	hc.SetContentType(clHttpClient.ContentJson)
-	hc.AddHeader("Authorization", "Bearer " + token)
+	hc.AddHeader("Authorization", "Bearer "+token)
 	hc.SetBody(clJson.CreateBy(clJson.M{
 		"content": clJson.CreateBy(_content).ToStr(),
 	}).ToStr())

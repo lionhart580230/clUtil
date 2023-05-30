@@ -4,14 +4,13 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"fmt"
-	"github.com/xiaolan580230/clUtil/clCrypt"
+	"github.com/lionhart580230/clUtil/clCrypt"
 	"net/url"
 	"sort"
 	"strings"
 )
 
 type Map map[string]interface{}
-
 
 // 对参数进行编码
 func URIEncode(_str string) string {
@@ -46,8 +45,8 @@ func GlobalSigned(_param Map, _secretKey string) Map {
 	StringToSign := URIEncode(paramStr.String())
 	StringToSign = "GET&%2F&" + StringToSign
 	//clLog.Debug("string to sign: %v", StringToSign)
-	mac := hmac.New(sha1.New, []byte(_secretKey + "&"))
-	mac.Write([]byte( StringToSign ))
+	mac := hmac.New(sha1.New, []byte(_secretKey+"&"))
+	mac.Write([]byte(StringToSign))
 	_param["Signature"] = URIEncode(clCrypt.Base64Encode(mac.Sum(nil)))
 	return _param
 }
