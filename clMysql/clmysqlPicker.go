@@ -1,6 +1,7 @@
 package clMysql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -178,8 +179,7 @@ func (this *DBPointer) StartTrans() (*ClTranslate, error) {
  *
  * return
  * @1  结果集
- * @2  结果条数
- * @3  如果有错误发生,这里是错误内容,否则为nil
+ * @2  如果有错误发生,这里是错误内容,否则为nil
  */
 func (this *DBPointer) Query(sqlstr string, args ...interface{}) (*DbResult, error) {
 
@@ -190,9 +190,44 @@ func (this *DBPointer) Query(sqlstr string, args ...interface{}) (*DbResult, err
 
 	this.lastSql = lastSql
 
-	rows, err := query(lastSql, this.conn)
+	rows, err := query(lastSql, this.conn, 0)
 	if err != nil {
 		this.lastSql = fmt.Sprintf(sqlstr, args...)
+		this.lastErr = fmt.Sprintf("查询失败: %v", err)
+		return nil, err
+	}
+	var result DbResult
+	result.ArrResult = make([]*clSuperMap.SuperMap, 0)
+	for _, val := range rows {
+		result.ArrResult = append(result.ArrResult, val)
+	}
+	result.Length = uint32(len(result.ArrResult))
+
+	return &result, nil
+}
+
+/**
+ * 带超时时间的查询
+ * 不支持自定义主键，但返回的是slice类型，更加精简
+ * @param {[type]} sqlstr string 需要查询的数据库语句
+ * @param {[type]} cache  int    缓存存在的时间, 单位: 秒
+ *
+ * return
+ * @1  结果集
+ * @2  如果有错误发生,这里是错误内容,否则为nil
+ */
+func (this *DBPointer) QueryWithTimeout(timeout uint32, sqlstr string, args ...interface{}) (*DbResult, error) {
+
+	lastSql := sqlstr
+	if args != nil && len(args) != 0 {
+		lastSql = fmt.Sprintf(sqlstr, args...)
+	}
+
+	this.lastSql = lastSql
+
+	rows, err := query(lastSql, this.conn, timeout)
+	if err != nil {
+		this.lastSql = lastSql
 		this.lastErr = fmt.Sprintf("查询失败: %v", err)
 		return nil, err
 	}
@@ -222,42 +257,10 @@ func (this *DBPointer) GetLastSql() string {
 }
 
 /**
- * 普通的数据库查询
- * 不支持自定义主键，但返回的是slice类型，更加精简
- * @param {[type]} sqlstr string 需要查询的数据库语句
- * @param {[type]} cache  int    缓存存在的时间, 单位: 秒
- *
- * return
- * @1  结果集
- * @2  结果条数
- * @3  如果有错误发生,这里是错误内容,否则为nil
+ * 数据库执行语句
+ * @param sqlstr sql语句
+ * @param args sql参数
  */
-func (this *DBPointer) QueryByKey(sqlstr string, key string, args ...interface{}) (*DbResult, error) {
-
-	lastSql := sqlstr
-	if args != nil && len(args) != 0 {
-		lastSql = fmt.Sprintf(sqlstr, args...)
-	}
-
-	this.lastSql = lastSql
-
-	rows, err := query(lastSql, this.conn)
-	if err != nil {
-		this.lastErr = fmt.Sprintf("查询失败: %v", err)
-		return nil, err
-	}
-	var result DbResult
-	result.MapResult = make(map[string]*clSuperMap.SuperMap)
-	result.Length = uint32(len(rows))
-
-	for _, val := range rows {
-		result.MapResult[val.GetStr(key, "")] = val
-	}
-
-	return &result, nil
-}
-
-// 执行
 func (this *DBPointer) Exec(sqlstr string, args ...interface{}) (int64, error) {
 
 	lastSql := sqlstr
@@ -275,6 +278,45 @@ func (this *DBPointer) Exec(sqlstr string, args ...interface{}) (int64, error) {
 	}
 
 	res, err := this.conn.Exec(lastSql)
+	if err != nil {
+		this.lastErr = fmt.Sprintf("执行失败! ERR:%v", err)
+		this.lastSql = fmt.Sprintf(sqlstr, args...)
+		return 0, err
+	}
+
+	if strings.HasPrefix(strings.ToLower(sqlstr), "insert") {
+		return res.LastInsertId()
+	}
+
+	return res.RowsAffected()
+}
+
+/**
+ * 数据库执行语句带超时
+ * @param timeout 超时时间
+ * @param sqlstr sql语句
+ * @param args sql参数
+ */
+func (this *DBPointer) ExecWithTimeout(timeout uint32, sqlstr string, args ...interface{}) (int64, error) {
+
+	lastSql := sqlstr
+	if args != nil && len(args) != 0 {
+		lastSql = fmt.Sprintf(sqlstr, args...)
+	}
+	if lastSql == "" {
+		return 0, errors.New("SQL语句为空")
+	}
+
+	this.lastSql = lastSql
+	if this.conn == nil {
+		this.lastErr = "错误: SQL连线指针为空"
+		return 0, errors.New("错误: SQL连线指针为nil pointer")
+	}
+	c := context.Background()
+	if timeout > 0 {
+		c, _ = context.WithTimeout(c, time.Duration(timeout)*time.Second)
+	}
+	res, err := this.conn.ExecContext(c, lastSql)
 	if err != nil {
 		this.lastErr = fmt.Sprintf("执行失败! ERR:%v", err)
 		this.lastSql = fmt.Sprintf(sqlstr, args...)

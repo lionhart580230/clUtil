@@ -30,6 +30,7 @@ type SqlBuider struct {
 	group      string
 	having     string
 	expire     uint32
+	timeout    uint32 // 超时时间，秒
 	finalSql   string
 
 	addColumns    []MySqlColumns // 保存的字段
@@ -98,25 +99,10 @@ func (this *DBPointer) NewBuilderByTable(_tableName string) *SqlBuider {
 	return sqlbuild.Table(_tableName)
 }
 
-// 使用DBPointer进行构建器创建
-func (this *DBPointer) BuilderForTable(_tableName string) *SqlBuider {
-
-	sqlbuild := SqlBuider{
-		dbPointer: this,
-		dbType:    1,
-		dbname:    this.Dbname,
-		leftJoin:  make([]sqlJoin, 0),
-		rightJoin: make([]sqlJoin, 0),
-	}
-	return sqlbuild.Table(_tableName)
-}
-
-/*
-*
-
-	设置表格名称
-	@param tablename string  要设置的表格名称
-*/
+/**
+ * 设置表格名称
+ * @param tablename string  要设置的表格名称
+ */
 func (this *SqlBuider) Table(tablename string) *SqlBuider {
 	this.tablename = tablename
 	this.whereStr = ""
@@ -166,23 +152,30 @@ func (this *SqlBuider) Where(wherestr string, args ...interface{}) *SqlBuider {
 	return this
 }
 
-/*
-*
-设置重复要更新的key列表
-*/
+/**
+ * 设置重复要更新的key列表
+ * @param keys 要更新的字段名字列表
+ */
 func (this *SqlBuider) OnDuplicateKey(keys []string) *SqlBuider {
 	this.duplicateKey = keys
 	return this
 }
 
-/*
-*
-
-	设置要查询的Field
-	@param fiedlStr string FIELD字段列表
-*/
+/**
+ * 设置要查询的Field
+ * @param fiedlStr string FIELD字段列表
+ */
 func (this *SqlBuider) Field(fieldStr string) *SqlBuider {
 	this.fieldStr = fieldStr
+	return this
+}
+
+/**
+ * 设置要查询的Field
+ * @param fiedlStr string FIELD字段列表
+ */
+func (this *SqlBuider) FieldList(fields []string) *SqlBuider {
+	this.fieldStr = "`" + strings.Join(fields, "`,`") + "`"
 	return this
 }
 
@@ -214,8 +207,8 @@ func (this *SqlBuider) Order(orders string) *SqlBuider {
 	设置Cache 缓存时间
 	@param expire int32 缓存有效期
 */
-func (this *SqlBuider) Cache(expire uint32) *SqlBuider {
-	this.expire = expire
+func (this *SqlBuider) Timeout(_timeout uint32) *SqlBuider {
+	this.timeout = _timeout
 	return this
 }
 
@@ -253,12 +246,10 @@ func (this *SqlBuider) DB(dbname string) *SqlBuider {
 	return this
 }
 
-/*
-*
-
-	查询语句
-*/
-func (this *SqlBuider) Select() (*DbResult, error) {
+/**
+ * 查询语句并返回结果集
+ */
+func (this *SqlBuider) Query() (*DbResult, error) {
 
 	sqlStr, buildErr := this.buildQuerySql()
 	if buildErr != nil {
@@ -266,28 +257,15 @@ func (this *SqlBuider) Select() (*DbResult, error) {
 	}
 	this.finalSql = sqlStr
 
-	var resp *DbResult = nil
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Query(sqlStr, this.expire)
-	case 1: // Picker
-		resp, err = this.dbPointer.Query(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.QueryTx(sqlStr)
-	}
-
+	var resp, err = this.QueryCustom(sqlStr)
 	return resp, err
 }
 
-/*
-*
-
-	    查询语句
-		获取指定索引处的数据
-		@param idx int 索引id
-*/
+/**
+ * 查询语句
+ * 获取指定索引处的数据
+ * @param idx int 索引id
+ */
 func (this *SqlBuider) Find(idx uint32) (*clSuperMap.SuperMap, error) {
 
 	sqlStr, buildErr := this.buildQuerySql()
@@ -296,17 +274,7 @@ func (this *SqlBuider) Find(idx uint32) (*clSuperMap.SuperMap, error) {
 	}
 	this.finalSql = sqlStr
 
-	var resp *DbResult = nil
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Query(sqlStr, this.expire)
-	case 1: // Picker
-		resp, err = this.dbPointer.Query(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.QueryTx(sqlStr)
-	}
+	resp, err := this.QueryCustom(sqlStr)
 
 	if err != nil {
 		return nil, err
@@ -319,13 +287,11 @@ func (this *SqlBuider) Find(idx uint32) (*clSuperMap.SuperMap, error) {
 	return resp.ArrResult[idx], nil
 }
 
-/*
-*
-
-	    查询语句
-		获取指定索引处的数据
-		@param idx int 索引id
-*/
+/**
+ * 查询语句
+ * 获取指定索引处的数据
+ * @param idx int 索引id
+ */
 func (this *SqlBuider) Count() (int32, error) {
 
 	this.fieldStr = fmt.Sprintf("COUNT(*) as t_count")
@@ -335,14 +301,7 @@ func (this *SqlBuider) Count() (int32, error) {
 	}
 
 	this.finalSql = sqlStr
-
-	var resp *DbResult = nil
-	var err error
-	if this.dbPointer != nil {
-		resp, err = this.dbPointer.Query(sqlStr)
-	} else {
-		resp, err = Query(sqlStr, this.expire)
-	}
+	resp, err := this.QueryCustom(sqlStr)
 
 	if err != nil {
 		return 0, err
@@ -354,13 +313,11 @@ func (this *SqlBuider) Count() (int32, error) {
 	return resp.ArrResult[0].GetInt32("t_count", 0), nil
 }
 
-/*
-*
-
-	    查询语句
-		获取指定索引处的数据
-		@param idx int 索引id
-*/
+/**
+ * 查询语句
+ * 获取指定索引处的数据
+ * @param idx int 索引id
+ */
 func (this *SqlBuider) Max(_field string) (uint64, error) {
 
 	this.fieldStr = fmt.Sprintf("MAX(`%v`) as max_id", _field)
@@ -370,14 +327,7 @@ func (this *SqlBuider) Max(_field string) (uint64, error) {
 	}
 
 	this.finalSql = sqlStr
-	var resp *DbResult = nil
-	var err error
-	if this.dbPointer != nil {
-		resp, err = this.dbPointer.Query(sqlStr)
-	} else {
-		resp, err = Query(sqlStr, this.expire)
-	}
-
+	resp, err := this.QueryCustom(sqlStr)
 	if err != nil {
 		return 0, err
 	}
@@ -393,7 +343,7 @@ func (this *SqlBuider) Max(_field string) (uint64, error) {
 
 	事务查询语句
 */
-func (this *SqlBuider) SelectTx(tx *DbTransform) (*DbResult, error) {
+func (this *SqlBuider) SelectTx() (*DbResult, error) {
 
 	sqlStr, buildErr := this.buildQuerySql()
 	if buildErr != nil {
@@ -401,18 +351,8 @@ func (this *SqlBuider) SelectTx(tx *DbTransform) (*DbResult, error) {
 	}
 
 	this.finalSql = sqlStr
-	var resp *DbResult = nil
-	var err error
 
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Query(sqlStr, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Query(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.QueryTx(sqlStr)
-	}
-
+	resp, err := this.QueryCustom(sqlStr)
 	return resp, err
 }
 
@@ -444,17 +384,7 @@ func (this *SqlBuider) Save(data map[string]interface{}) (int64, error) {
 	sqlStr := fmt.Sprintf("UPDATE %v SET %v WHERE %v", this.tablename, fieldstr, this.whereStr)
 	this.finalSql = sqlStr
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
+	var resp, err = this.ExecCustom(this.finalSql)
 	return resp, err
 }
 
@@ -465,23 +395,8 @@ func (this *SqlBuider) SaveObj(_resp interface{}) (int64, error) {
 
 	this.finalSql = fmt.Sprintf("UPDATE `%v`.`%v` SET %v WHERE %v", this.dbname, this.tablename, strings.Join(fieldList, ","), this.whereStr)
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(this.finalSql, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(this.finalSql)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(this.finalSql)
-	}
-
-	if err != nil {
-		return 0, err
-	}
-
-	return resp, nil
+	resp, err := this.ExecCustom(this.finalSql)
+	return resp, err
 }
 
 /*
@@ -499,18 +414,7 @@ func (this *SqlBuider) Del() (int64, error) {
 	sqlStr := fmt.Sprintf("DELETE FROM %v WHERE %v", this.tablename, this.whereStr)
 	this.finalSql = sqlStr
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
-
+	resp, err := this.ExecCustom(sqlStr)
 	return resp, err
 }
 
@@ -542,17 +446,7 @@ func (this *SqlBuider) SaveTx(data map[string]interface{}) (int64, error) {
 	sqlStr := fmt.Sprintf("UPDATE %v SET %v WHERE %v", this.tablename, fieldstr, this.whereStr)
 	this.finalSql = sqlStr
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
+	resp, err := this.ExecCustom(this.finalSql)
 	return resp, err
 }
 
@@ -568,16 +462,9 @@ func (this *SqlBuider) Truncate() error {
 		return errors.New("EMPTY TABLE NAME")
 	}
 
-	var err error
-
 	this.finalSql = fmt.Sprintf("TRUNCATE TABLE %v", this.tablename)
 
-	if this.dbPointer != nil {
-		_, err = this.dbPointer.Exec(this.finalSql)
-	} else {
-		_, err = Exec(this.finalSql)
-	}
-
+	_, err := this.ExecCustom(this.finalSql)
 	return err
 }
 
@@ -630,18 +517,7 @@ func (this *SqlBuider) Add(data map[string]interface{}) (int64, error) {
 
 	sqlStr := fmt.Sprintf("INSERT INTO %v (%v) VALUES(%v) %v", this.tablename, fieldstr.String(), valuestr.String(), onDuplicateStr.String())
 	this.finalSql = sqlStr
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
-
+	resp, err := this.ExecCustom(this.finalSql)
 	return resp, err
 }
 
@@ -702,18 +578,7 @@ func (this *SqlBuider) AddMulti(_list []map[string]interface{}) (int64, error) {
 
 	this.finalSql = fmt.Sprintf("INSERT INTO %v (`%v`) VALUES %v %v", this.tablename, strings.Join(fieldstr, "`,`"), strings.Join(valueList, ","), onDuplicateStr.String())
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(this.finalSql)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(this.finalSql)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(this.finalSql)
-	}
-
+	resp, err := this.ExecCustom(this.finalSql)
 	return resp, err
 }
 
@@ -751,19 +616,7 @@ func (this *SqlBuider) Replace(data map[string]interface{}) (int64, error) {
 
 	sqlStr := fmt.Sprintf("REPLACE INTO %v (%v) VALUES(%v)", this.tablename, fieldstr.String(), valuestr.String())
 	this.finalSql = sqlStr
-
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
-
+	resp, err := this.ExecCustom(sqlStr)
 	return resp, err
 }
 
@@ -815,21 +668,8 @@ func (this *SqlBuider) AddTx(data map[string]interface{}) (int64, error) {
 
 	sqlStr := fmt.Sprintf("INSERT INTO %v (%v) VALUES(%v) %v", this.tablename, fieldstr.String(), valuestr.String(), onDuplicateStr.String())
 	this.finalSql = sqlStr
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
-	if err == nil {
-		return resp, nil
-	}
-	return resp, errors.New(fmt.Sprintf("%v,SQL:%v", err, sqlStr))
+	resp, err := this.ExecCustom(this.finalSql)
+	return resp, err
 }
 
 /*
@@ -919,12 +759,10 @@ func (this *SqlBuider) RemoveIndex(cols string) *SqlBuider {
 	return this
 }
 
-/*
-*
-
-	创建表格
-	overWrite: 是否覆盖, 如果为true则会先删除原先的表
-*/
+/**
+ * 创建表格
+ * @param overWrite 是否覆盖, 如果为true则会先删除原先的表
+ */
 func (this *SqlBuider) CreateTable(overWrite bool) bool {
 	//生成整个表格的SQL
 	if this.tablename == "" {
@@ -962,33 +800,19 @@ func (this *SqlBuider) CreateTable(overWrite bool) bool {
 	}
 	sqlStr.WriteString(") ENGINE=INNODB DEFAULT CHARSET=UTF8")
 
+	var err error
 	if overWrite {
-		Exec("DROP TABLE IF EXISTS " + this.tablename)
+		switch this.dbType {
+		case 1: // Picker
+			this.dbPointer.Exec("DROP TABLE IF EXISTS " + this.tablename)
+		case 2: // 事务
+			this.dbTx.Exec("DROP TABLE IF EXISTS " + this.tablename)
+		}
 	}
 
 	this.finalSql = sqlStr.String()
-
-	if this.dbPointer != nil {
-		_, err := this.dbPointer.Exec(sqlStr.String())
-		if err != nil {
-			fmt.Printf(">> 添加Exec :sql失败! %v\n", err)
-			return false
-		}
-	} else if this.dbTx != nil {
-		_, err := this.dbTx.ExecTx(sqlStr.String())
-		if err != nil {
-			fmt.Printf(">> 添加ExecTx sql失败! %v\n", err)
-			return false
-		}
-	} else {
-		_, err := Exec(sqlStr.String())
-
-		if err != nil {
-			fmt.Printf(">> 添加默认 sql失败! %v\n", err)
-			return false
-		}
-	}
-	return true
+	_, err = this.ExecCustom(this.finalSql)
+	return err == nil
 }
 
 // 修改表格结构
@@ -1058,24 +882,8 @@ func (this *SqlBuider) SaveTable() error {
 	}
 
 	this.finalSql = SqlStr.String()
-
-	if this.dbPointer != nil {
-		_, err := this.dbPointer.Exec(SqlStr.String())
-		if err != nil {
-			return err
-		}
-	} else if this.dbTx != nil {
-		_, err := this.dbTx.ExecTx(SqlStr.String())
-		if err != nil {
-			return err
-		}
-	} else {
-		_, err := Exec(SqlStr.String())
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err := this.ExecCustom(this.finalSql)
+	return err
 }
 
 // 联表查询
@@ -1157,17 +965,7 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 
 	this.finalSql = sqlStr
 
-	var resp *DbResult = nil
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Query(sqlStr, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Query(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.QueryTx(sqlStr)
-	}
+	resp, err := this.QueryCustom(this.finalSql)
 
 	if err != nil {
 		return err
@@ -1176,14 +974,12 @@ func (this *SqlBuider) FindAll(_resp interface{}) error {
 	if resp != nil && resp.Length > 0 {
 		i := 0
 		for idx, row := range resp.ArrResult {
-
 			// 需要添加
 			if _valueE.Len() == idx {
 				elemp := reflect.New(_element)
 				Unmarsha(row, elemp.Interface())
 				_valueE = reflect.Append(_valueE, elemp.Elem())
 			}
-
 			i++
 		}
 
@@ -1209,18 +1005,7 @@ func (this *SqlBuider) FindOne(_resp interface{}) error {
 
 	this.finalSql = sqlStr
 
-	var resp *DbResult = nil
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Query(sqlStr, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Query(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.QueryTx(sqlStr)
-	}
-
+	resp, err := this.QueryCustom(this.finalSql)
 	if err != nil {
 		return err
 	}
@@ -1251,25 +1036,10 @@ func (this *SqlBuider) AddObj(_resp interface{}, _include_primary bool) (int64, 
 	}
 
 	sqlStr := fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES('%v') %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, "','"), onDuplicateStr.String())
-
 	this.finalSql = sqlStr
-	var resp int64
-	var err error
 
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
-
-	if err != nil {
-		return 0, errors.New(fmt.Sprintf("%v SQL(%v)", err, sqlStr))
-	}
-
-	return resp, nil
+	resp, err := this.ExecCustom(sqlStr)
+	return resp, err
 }
 
 // 获取查找
@@ -1290,25 +1060,15 @@ func (this *SqlBuider) AddObjMulti(_resp []interface{}, _includePrimary bool) (i
 		}
 	}
 
-	this.finalSql = fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES %v %v", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, ","), onDuplicateStr.String())
+	this.finalSql = fmt.Sprintf("INSERT INTO `%v`.`%v` (`%v`) VALUES %v %v",
+		this.dbname,
+		this.tablename,
+		strings.Join(fieldList, "`,`"),
+		strings.Join(valuesList, ","),
+		onDuplicateStr.String())
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(this.finalSql, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(this.finalSql)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(this.finalSql)
-	}
-
-	if err != nil {
-		return 0, err
-	}
-
-	return resp, nil
+	resp, err := this.ExecCustom(this.finalSql)
+	return resp, err
 }
 
 // 覆盖
@@ -1319,23 +1079,8 @@ func (this *SqlBuider) ReplaceObj(_resp interface{}, _include_primary bool) (int
 	sqlStr := fmt.Sprintf("REPLACE INTO `%v`.`%v` (`%v`) VALUES('%v')", this.dbname, this.tablename, strings.Join(fieldList, "`,`"), strings.Join(valuesList, "','"))
 	this.finalSql = sqlStr
 
-	var resp int64
-	var err error
-
-	switch this.dbType {
-	case 0: // 正常
-		resp, err = Exec(sqlStr, 0)
-	case 1: // Picker
-		resp, err = this.dbPointer.Exec(sqlStr)
-	case 2: // 事务
-		resp, err = this.dbTx.ExecTx(sqlStr)
-	}
-
-	if err != nil {
-		return 0, errors.New(fmt.Sprintf("%v SQL(%v)", err, sqlStr))
-	}
-
-	return resp, nil
+	resp, err := this.ExecCustom(sqlStr)
+	return resp, err
 }
 
 func (this *SqlBuider) buildQuerySql() (string, error) {
@@ -1402,4 +1147,51 @@ func (this *SqlBuider) buildQuerySql() (string, error) {
 		FinallySql = fmt.Sprintf("SELECT %v FROM ( %v ) temp %v", this.fieldStr, FinallySql, extraSql)
 	}
 	return FinallySql, nil
+}
+
+// 标准执行
+func (this *SqlBuider) ExecCustom(sqlStr string) (int64, error) {
+	var resp int64
+	var err error
+	switch this.dbType {
+	case 1: // Picker
+		if this.timeout > 0 {
+			resp, err = this.dbPointer.ExecWithTimeout(this.timeout, sqlStr)
+		} else {
+			resp, err = this.dbPointer.Exec(sqlStr)
+		}
+	case 2: // 事务
+		if this.timeout > 0 {
+			resp, err = this.dbTx.ExecWithTimeout(this.timeout, sqlStr)
+		} else {
+			resp, err = this.dbTx.Exec(sqlStr)
+		}
+	default:
+		err = errors.New("unknown mysql mode")
+	}
+	return resp, err
+}
+
+// 标准查询
+func (this *SqlBuider) QueryCustom(sqlStr string) (*DbResult, error) {
+	var resp *DbResult = nil
+	var err error
+
+	switch this.dbType {
+	case 1: // Picker
+		if this.timeout > 0 {
+			resp, err = this.dbPointer.QueryWithTimeout(this.timeout, this.finalSql)
+		} else {
+			resp, err = this.dbPointer.Query(this.finalSql)
+		}
+	case 2: // 事务
+		if this.timeout > 0 {
+			resp, err = this.dbTx.QueryWithTimeout(this.timeout, this.finalSql)
+		} else {
+			resp, err = this.dbTx.Query(this.finalSql)
+		}
+	default:
+		err = errors.New("unknown mysql mode")
+	}
+	return resp, err
 }

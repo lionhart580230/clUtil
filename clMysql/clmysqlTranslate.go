@@ -1,11 +1,13 @@
 package clMysql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/lionhart580230/clUtil/clSuperMap"
 	"strings"
+	"time"
 )
 
 type ClTranslate struct {
@@ -14,7 +16,7 @@ type ClTranslate struct {
 }
 
 // 查询事务
-func (this *ClTranslate) QueryTx(sqlstr string, args ...interface{}) (*DbResult, error) {
+func (this *ClTranslate) Query(sqlstr string, args ...interface{}) (*DbResult, error) {
 
 	if this.tx == nil {
 		return nil, errors.New("错误: 事务指针为空")
@@ -24,7 +26,37 @@ func (this *ClTranslate) QueryTx(sqlstr string, args ...interface{}) (*DbResult,
 		sqlstr = fmt.Sprintf(sqlstr, args...)
 	}
 
-	rows, err := queryTx(sqlstr, this.tx)
+	rows, err := queryTx(context.Background(), sqlstr, this.tx)
+	if err != nil {
+		return nil, err
+	}
+	var result DbResult
+	result.ArrResult = make([]*clSuperMap.SuperMap, 0)
+	result.Length = uint32(len(rows))
+
+	for _, val := range rows {
+		result.ArrResult = append(result.ArrResult, val)
+	}
+
+	return &result, nil
+}
+
+// 查询事务带超时时间
+func (this *ClTranslate) QueryWithTimeout(timeout uint32, sqlstr string, args ...interface{}) (*DbResult, error) {
+
+	if this.tx == nil {
+		return nil, errors.New("错误: 事务指针为空")
+	}
+
+	if args != nil && len(args) > 0 {
+		sqlstr = fmt.Sprintf(sqlstr, args...)
+	}
+
+	c := context.Background()
+	if timeout > 0 {
+		c, _ = context.WithTimeout(c, time.Duration(timeout)*time.Second)
+	}
+	rows, err := queryTx(c, sqlstr, this.tx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +72,7 @@ func (this *ClTranslate) QueryTx(sqlstr string, args ...interface{}) (*DbResult,
 }
 
 // 执行事务
-func (this *ClTranslate) ExecTx(sqlstr string, args ...interface{}) (int64, error) {
+func (this *ClTranslate) Exec(sqlstr string, args ...interface{}) (int64, error) {
 
 	if this.tx == nil {
 		return 0, errors.New("错误: 事务指针为 nil pointer")
@@ -51,6 +83,34 @@ func (this *ClTranslate) ExecTx(sqlstr string, args ...interface{}) (int64, erro
 	}
 
 	res, err := this.tx.Exec(sqlstr)
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("%v, SQL:%v", err, sqlstr))
+	}
+
+	if strings.HasPrefix(strings.ToLower(sqlstr), "insert") {
+		return res.LastInsertId()
+	}
+
+	return res.RowsAffected()
+}
+
+// 执行事务
+func (this *ClTranslate) ExecWithTimeout(timeout uint32, sqlstr string, args ...interface{}) (int64, error) {
+
+	if this.tx == nil {
+		return 0, errors.New("错误: 事务指针为 nil pointer")
+	}
+
+	if args != nil && len(args) != 0 {
+		sqlstr = fmt.Sprintf(sqlstr, args...)
+	}
+
+	c := context.Background()
+	if timeout > 0 {
+		c, _ = context.WithTimeout(c, time.Duration(timeout)*time.Second)
+	}
+
+	res, err := this.tx.ExecContext(c, sqlstr)
 	if err != nil {
 		return 0, errors.New(fmt.Sprintf("%v, SQL:%v", err, sqlstr))
 	}
@@ -116,7 +176,7 @@ func (this *ClTranslate) GetTables(contain string) ([]string, error) {
 		querySql = "SHOW TABLES LIKE '%" + contain + "%'"
 	}
 
-	res, err := this.QueryTx(querySql)
+	res, err := this.Query(querySql)
 	if err != nil {
 		return []string{}, err
 	}
