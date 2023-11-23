@@ -90,6 +90,12 @@ func (this *RedisObject) Del(key string) error {
 	return i.Err()
 }
 
+// 不使用前缀的方式删除key
+func (this *RedisObject) DelNoPrefix(key string) error {
+	i := this.myredis.Del(key)
+	return i.Err()
+}
+
 // 设置
 func (this *RedisObject) Set(key string, val interface{}, expire int32) error {
 
@@ -98,6 +104,13 @@ func (this *RedisObject) Set(key string, val interface{}, expire int32) error {
 		keys = this.prefix + "_" + key
 	}
 	err := this.myredis.Set(keys, buildRedisValue(keys, uint32(expire), val),
+		time.Duration(time.Second*time.Duration(expire))).Err()
+	return err
+}
+
+// 设置不自动添加前缀
+func (this *RedisObject) SetNoPrefix(key string, val interface{}, expire int32) error {
+	err := this.myredis.Set(key, buildRedisValue(key, uint32(expire), val),
 		time.Duration(time.Second*time.Duration(expire))).Err()
 	return err
 }
@@ -317,6 +330,22 @@ func (this *RedisObject) SetNx(key string, value interface{}, expire uint32) boo
 
 	if _, err := rest.Result(); err != nil {
 		fmt.Printf(">> SetNX |%v| Failed! Err:%v\n", keys, err)
+		return false
+	}
+
+	return rest.Val()
+}
+
+// 不使用前缀的分布式锁
+func (this *RedisObject) SetNxNoPrefix(key string, value interface{}, expire uint32) bool {
+	value = buildRedisValue(key, expire, value)
+	rest := this.myredis.SetNX(key, value, time.Duration(expire)*time.Second)
+	if rest == nil {
+		return false
+	}
+
+	if _, err := rest.Result(); err != nil {
+		fmt.Printf(">> SetNX |%v| Failed! Err:%v\n", key, err)
 		return false
 	}
 
