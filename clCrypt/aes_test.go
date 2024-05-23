@@ -1,8 +1,11 @@
 package clCrypt
 
 import (
+	"crypto/sha1"
+	"fmt"
 	"github.com/lionhart580230/clUtil/clCommon"
 	"github.com/lionhart580230/clUtil/clLog"
+	"golang.org/x/crypto/pbkdf2"
 	"testing"
 )
 
@@ -21,4 +24,10 @@ func TestAesCBCEncode(t *testing.T) {
 		}
 	}
 
+}
+
+func TestAesCBCDecode(t *testing.T) {
+	a := pbkdf2.Key([]byte("1233123"), []byte("hello"), 1000, 32, sha1.New)
+	fmt.Printf("加密: %v\n", a)
+	fmt.Printf("长度: %v\n", len(a))
 }

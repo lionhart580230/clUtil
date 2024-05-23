@@ -105,9 +105,11 @@ func (this *jsonItem) StackParseTree() interface{} {
 // @return string 返回指定的之
 func (js *JsonMap) GetStr(key string, def string) string {
 	if val, ok := (*js)[key]; ok {
-		return val.data.ToStr()
+		if val.data != nil {
+			return val.data.ToStr()
+		}
 	}
-	return ""
+	return def
 }
 
 // 获取指定下标并转换成前后去空的string类型
@@ -116,14 +118,19 @@ func (js *JsonMap) GetStr(key string, def string) string {
 // @return string 返回指定的之
 func (js *JsonMap) GetStrTrim(key string, def string) string {
 	if val, ok := (*js)[key]; ok {
-		return strings.TrimSpace(val.data.ToStr())
+		if val.data != nil {
+			return strings.TrimSpace(val.data.ToStr())
+		}
 	}
-	return ""
+	return def
 }
 
 // 获取指定下标并转换成uint32类型
 func (js *JsonMap) GetUint32(key string, def uint32) uint32 {
 	if val, ok := (*js)[key]; ok {
+		if val.data == nil {
+			return def
+		}
 		b, e := strconv.ParseUint(val.data.ToStr(), 10, 32)
 		if e != nil {
 			return def
@@ -136,6 +143,9 @@ func (js *JsonMap) GetUint32(key string, def uint32) uint32 {
 // 获取指定下标并转换成uint32类型
 func (js *JsonMap) GetUint64(key string, def uint64) uint64 {
 	if val, ok := (*js)[key]; ok {
+		if val.data == nil {
+			return def
+		}
 		b, e := strconv.ParseUint(val.data.ToStr(), 10, 64)
 		if e != nil {
 			return def
@@ -160,6 +170,9 @@ func (js *JsonMap) GetInt32(key string, def int32) int32 {
 // 获取指定下标并转换成float32类型
 func (js *JsonMap) GetFloat32(key string, def float32) float32 {
 	if val, ok := (*js)[key]; ok {
+		if val.data == nil {
+			return def
+		}
 		b, e := strconv.ParseFloat(val.data.ToStr(), 32)
 		if e != nil {
 			return def
@@ -172,6 +185,9 @@ func (js *JsonMap) GetFloat32(key string, def float32) float32 {
 // 获取指定下标并转换成float64类型
 func (js *JsonMap) GetFloat64(key string, def float64) float64 {
 	if val, ok := (*js)[key]; ok {
+		if val.data == nil {
+			return def
+		}
 		b, e := strconv.ParseFloat(val.data.ToStr(), 64)
 		if e != nil {
 			return def
@@ -184,6 +200,9 @@ func (js *JsonMap) GetFloat64(key string, def float64) float64 {
 // 获取指定下标并转换成bool类型
 func (js *JsonMap) GetBool(key string, def bool) bool {
 	if val, ok := (*js)[key]; ok {
+		if val.data == nil {
+			return def
+		}
 		b, e := strconv.ParseBool(val.data.ToStr())
 		if e != nil {
 			return def
