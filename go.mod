@@ -3,6 +3,7 @@ module github.com/lionhart580230/clUtil
 go 1.12
 
 require (
+	github.com/JFJun/trx-sign-go v1.0.3 // indirect
 	github.com/farmerx/gorsa v0.0.0-20161211100049-3ae06f674f40 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
