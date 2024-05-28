@@ -152,6 +152,7 @@ func QueryTransaction(_txId string) (error, *QueryTransactionResp) {
 	if err != nil {
 		return err, nil
 	}
+
 	var data QueryTransactionResp
 	if err := json.Unmarshal([]byte(resp.Body), &data); err != nil {
 		return err, nil
@@ -180,4 +181,34 @@ func GetBlockInfo(_blockId string) (error, *Block) {
 		return err, nil
 	}
 	return nil, &block
+}
+
+type AccountInfo struct {
+	Address string `json:"address"`
+	Balance uint64 `json:"balance"`
+}
+
+// 获取TRX余额
+func GetAccountInfo(_address string) (error, *AccountInfo) {
+
+	hex, _ := genkeys.AddressB58ToHex(_address)
+
+	httpClient := clHttpClient.NewClient(GetTronApiUrl() + "walletsolidity/getaccount")
+	httpClient.AddHeader("accept", "application/json")
+	httpClient.SetContentType(clHttpClient.ContentJson)
+	httpClient.SetBody(clJson.CreateBy(clJson.M{
+		"address": hex,
+	}).ToStr())
+	resp, err := httpClient.Do()
+	if err != nil {
+		return err, nil
+	}
+	clLog.Debug("获取账号信息:%v", resp.Body)
+
+	var accountInfo AccountInfo
+	err = json.Unmarshal([]byte(resp.Body), &accountInfo)
+	if err != nil {
+		return err, nil
+	}
+	return nil, &accountInfo
 }
