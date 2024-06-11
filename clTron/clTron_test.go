@@ -41,3 +41,7 @@ func TestQueryTransaction(t *testing.T) {
 func TestGetAccountInfo(t *testing.T) {
 	GetAccountInfo("TTga1YAxuUTbJVdLqsVjU7FNqXWbTPLfKB")
 }
+
+func TestGetAccountResources(t *testing.T) {
+	GetAccountResources("TS4yRVvuozWpKScEC4SKjEq7Y2g8QYEyx5")
+}

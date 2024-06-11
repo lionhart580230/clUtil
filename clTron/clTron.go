@@ -212,3 +212,24 @@ func GetAccountInfo(_address string) (error, *AccountInfo) {
 	}
 	return nil, &accountInfo
 }
+
+func GetAccountResources(_address string) (error, *AccountResource) {
+	hex, _ := genkeys.AddressB58ToHex(_address)
+	httpClient := clHttpClient.NewClient(GetTronApiUrl() + "wallet/getaccountresource")
+	httpClient.AddHeader("accept", "application/json")
+	httpClient.SetContentType(clHttpClient.ContentJson)
+	httpClient.SetBody(clJson.CreateBy(clJson.M{
+		"address": hex,
+	}).ToStr())
+	resp, err := httpClient.Do()
+	if err != nil {
+		return err, nil
+	}
+
+	var accountInfo AccountResource
+	err = json.Unmarshal([]byte(resp.Body), &accountInfo)
+	if err != nil {
+		return err, nil
+	}
+	return nil, &accountInfo
+}
