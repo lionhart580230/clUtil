@@ -58,3 +58,17 @@ type Transaction struct {
 	RawData    TransactionRawData `json:"raw_data"`
 	RawDataHex string             `json:"raw_data_hex"`
 }
+
+type AccountResource struct {
+	FreeNetUsed  uint32 `json:"freeNetUsed"`
+	FreeNetLimit uint32 `json:"freeNetLimit"`
+	AssetNetUsed []struct {
+		Key   string `json:"key"`
+		Value uint32 `json:"value"`
+	}
+	TotalNetLimit     uint64 `json:"TotalNetLimit"`
+	TotalNetWeight    uint64 `json:"TotalNetWeight"`
+	EnergyLimit       uint32 `json:"EnergyLimit"`
+	TotalEnergyLimit  uint64 `json:"TotalEnergyLimit"`
+	TotalEnergyWeight uint64 `json:"TotalEnergyWeight"`
+}
