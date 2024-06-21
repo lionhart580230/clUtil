@@ -27,3 +27,18 @@ func TestNew(t *testing.T) {
 
 	clLog.Debug("设置redis...")
 }
+
+func TestRedisObject_Listen(t *testing.T) {
+	redis, err := New("127.0.0.1:6379", "", "")
+	if err != nil {
+		clLog.Error("连接错误: %v", err)
+		return
+	}
+
+	var str = make(chan string)
+
+	go redis.Subscribe("queue_1", str)
+	for msg := range str {
+		clLog.Debug("收到消息: %v", msg)
+	}
+}
