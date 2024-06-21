@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/lionhart580230/clUtil/clJson"
 	"github.com/lionhart580230/clUtil/clLog"
+	"github.com/lionhart580230/clUtil/clTime"
 	"strings"
 	"sync"
 	"time"
@@ -581,10 +582,74 @@ func (this *RedisObject) Increment(key string, _val int64) int64 {
 	return res.Val()
 }
 
-// 添加一个值
+// 设置有效期
 func (this *RedisObject) SetExpire(_key string, _second uint32) bool {
 	var res *redis.BoolCmd
 
 	res = this.myredis.Expire(_key, time.Second*time.Duration(_second))
 	return res.Val()
+}
+
+// 侦听
+func (this *RedisObject) Subscribe(_key string, _ch chan<- string) error {
+	channel := this.myredis.PSubscribe(_key)
+	for {
+		msg, err := channel.ReceiveMessage()
+		if err != nil {
+			return err
+		}
+		_ch <- msg.Payload
+	}
+}
+
+// 发布消息
+func (this *RedisObject) Publish(_key string) uint32 {
+	cmd := this.myredis.Publish(_key, clJson.M{"hello": 100})
+	return uint32(cmd.Val())
+}
+
+func (this *RedisObject) XAdd(_stream string, _data clJson.M) string {
+	cmd := this.myredis.XAdd(&redis.XAddArgs{
+		Stream:       _stream,
+		MaxLenApprox: 1000,
+		ID:           "*",
+		Values:       _data,
+	})
+	return cmd.String()
+}
+
+func (this *RedisObject) XRead(_stream string, _ch chan<- clJson.M) {
+	for {
+		cmd := this.myredis.XRead(&redis.XReadArgs{
+			Streams: []string{_stream, "$"},
+			Count:   1,
+			Block:   0,
+		})
+		for _, val := range cmd.Val() {
+			for _, msg := range val.Messages {
+				_ch <- msg.Values
+			}
+		}
+	}
+}
+
+func (this *RedisObject) XReadGroup(_stream string, _groupName string, _ch chan<- clJson.M) {
+	for {
+		cmd := this.myredis.XReadGroup(&redis.XReadGroupArgs{
+			Group:    _groupName,
+			Consumer: fmt.Sprintf("customer_%d", clTime.GetNowTime()),
+			Streams:  []string{_stream, ">"},
+			NoAck:    false,
+		})
+		for _, val := range cmd.Val() {
+			for _, msg := range val.Messages {
+				this.myredis.XAck(_stream, _groupName, msg.ID)
+				_ch <- msg.Values
+			}
+		}
+	}
+}
+
+func (this *RedisObject) XCreateGroup(_stream string, _groupName string) {
+	this.myredis.XGroupCreate(_stream, _groupName, "$")
 }
