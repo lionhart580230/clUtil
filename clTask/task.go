@@ -167,7 +167,9 @@ func (this *TaskInfo) Run(nowTime uint32, dayTime uint32, week uint32, _recoverC
 			this.running = true
 		}
 
-		clLog.Info("定时任务: %v 开始执行~", this.Name)
+		if isDebug {
+			clLog.Debug("定时任务: %v 开始执行~", this.Name)
+		}
 		this.Callback()
 
 		if redisPtr != nil {

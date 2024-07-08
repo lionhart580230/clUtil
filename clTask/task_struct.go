@@ -39,3 +39,9 @@ type TaskPool struct {
 	redisPtr        *clRedis.RedisObject
 	recoverCallback func(string, string)
 }
+
+var isDebug = false
+
+func SetDebug(_debug bool) {
+	isDebug = _debug
+}
