@@ -39,7 +39,9 @@ func (this *TaskPool) Start() {
 
 // 添加新的计划任务
 func (this *TaskPool) AddNew(task *TaskInfo) {
-	clLog.Info("定时任务添加: %+v", task)
+	if isDebug {
+		clLog.Debug("定时任务添加: %+v", task)
+	}
 	this.pool = append(this.pool, task)
 }
 
