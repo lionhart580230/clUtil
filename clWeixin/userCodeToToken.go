@@ -11,7 +11,7 @@ type WxResUserCodeToToken struct {
 	ErrCode        uint32 `json:"errcode"`
 	ErrMsg         string `json:"errmsg"`
 	AccessToken    string `json:"access_token"`
-	ExpiresIn      string `json:"expires_in"`
+	ExpiresIn      uint32 `json:"expires_in"`
 	RefreshToken   string `json:"refresh_token"`
 	OpenId         string `json:"openid"`
 	Scope          string `json:"scope"`
