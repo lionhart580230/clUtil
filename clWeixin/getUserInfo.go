@@ -22,15 +22,11 @@ type WXRespUserInfo struct {
 }
 
 // 获取用户信息
-func GetUserInfo(_appId string, _appSecret string, _code string) (error, *WXRespUserInfo) {
-	err, accessTokenInfo := UserCodeToAccessToken(_appId, _appSecret, _code)
-	if err != nil {
-		return err, nil
-	}
+func GetUserInfo(_appId string, _appSecret string, _accessToken, _openId string) (error, *WXRespUserInfo) {
 
 	client := clHttpClient.NewClient("https://api.weixin.qq.com/sns/userinfo")
-	client.AddParam("access_token", accessTokenInfo.AccessToken)
-	client.AddParam("openid", accessTokenInfo.OpenId)
+	client.AddParam("access_token", _accessToken)
+	client.AddParam("openid", _openId)
 	client.AddParam("lang", "zh_CN")
 
 	res, err := client.Do()
