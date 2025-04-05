@@ -1,11 +1,9 @@
 package clConfig
 
 import (
-	"github.com/lionhart580230/clUtil/clLog"
 	"github.com/lionhart580230/clUtil/clSuperMap"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 )
 
@@ -27,7 +25,7 @@ func LoadFromFile(_filename string, _overWrite bool) error {
 		return err
 	}
 
-	section := "global"
+	section := "GLOBAL"
 	if _overWrite {
 		mConfig = make(map[string]*clSuperMap.SuperMap)
 		mConfig[section] = clSuperMap.NewSuperMap()
@@ -43,7 +41,7 @@ func LoadFromFile(_filename string, _overWrite bool) error {
 		}
 
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
-			section = strings.TrimPrefix(strings.TrimSuffix(line, "]"), "[")
+			section = strings.ToUpper(strings.TrimPrefix(strings.TrimSuffix(line, "]"), "["))
 			mConfig[section] = clSuperMap.NewSuperMap()
 			aConfig[section] = make([]string, 0)
 			continue
@@ -55,21 +53,29 @@ func LoadFromFile(_filename string, _overWrite bool) error {
 			aConfig[section] = append(aConfig[section], line)
 			continue
 		}
-		clLog.Info("section: %v key: %v, val: %v", section, line[:idx], line[idx+1:])
-		mConfig[section].Add(line[:idx], line[idx+1:])
+		mConfig[section].Add(strings.ToUpper(line[:idx]), line[idx+1:])
 	}
 	return nil
 }
 
+// 从环境变量中加载配置
+func LoadFromENV(_section string, _key string) {
+	_section = strings.ToUpper(_section)
+	_key = strings.ToUpper(_key)
+	val := os.Getenv(_section + "_" + _key)
+	if val == "" {
+		return
+	}
+	_, isOK := mConfig[_section]
+	if !isOK {
+		mConfig[_section] = clSuperMap.NewSuperMap()
+	}
+	mConfig[_section].Add(_key, val)
+}
+
 // 获取Uint32配置
 func GetUint32(_key string, _def uint32) uint32 {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseInt(os.Getenv(_key), 10, 32)
-		if e != nil {
-			return _def
-		}
-		return uint32(v)
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -83,13 +89,7 @@ func GetUint32(_key string, _def uint32) uint32 {
 
 // 获取Uint64配置
 func GetUint64(_key string, _def uint64) uint64 {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseInt(os.Getenv(_key), 10, 64)
-		if e != nil {
-			return _def
-		}
-		return uint64(v)
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -103,13 +103,7 @@ func GetUint64(_key string, _def uint64) uint64 {
 
 // 获取int32配置
 func GetInt32(_key string, _def int32) int32 {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseInt(os.Getenv(_key), 10, 32)
-		if e != nil {
-			return _def
-		}
-		return int32(v)
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -123,13 +117,7 @@ func GetInt32(_key string, _def int32) int32 {
 
 // 获取int64配置
 func GetInt64(_key string, _def int64) int64 {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseInt(os.Getenv(_key), 10, 64)
-		if e != nil {
-			return _def
-		}
-		return int64(v)
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -143,13 +131,7 @@ func GetInt64(_key string, _def int64) int64 {
 
 // 获取bool配置
 func GetBool(_key string, _def bool) bool {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseBool(os.Getenv(_key))
-		if e != nil {
-			return _def
-		}
-		return v
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -163,9 +145,7 @@ func GetBool(_key string, _def bool) bool {
 
 // 获取Str配置
 func GetStr(_key string, _def string) string {
-	if os.Getenv(_key) != "" {
-		return os.Getenv(_key)
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -180,13 +160,7 @@ func GetStr(_key string, _def string) string {
 
 // 获取Float32配置
 func GetFloat32(_key string, _def float32) float32 {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseFloat(os.Getenv(_key), 32)
-		if e != nil {
-			return _def
-		}
-		return float32(v)
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -200,13 +174,7 @@ func GetFloat32(_key string, _def float32) float32 {
 
 // 获取Float32配置
 func GetFloat64(_key string, _def float64) float64 {
-	if os.Getenv(_key) != "" {
-		v, e := strconv.ParseFloat(os.Getenv(_key), 64)
-		if e != nil {
-			return _def
-		}
-		return v
-	}
+	_key = strings.ToUpper(_key)
 	idx := strings.Index(_key, ".")
 	if idx <= 0 {
 		return _def
@@ -220,7 +188,7 @@ func GetFloat64(_key string, _def float64) float64 {
 
 // 获取Arr配置
 func GetStrArray(_key string) []string {
-	configItem, exists := aConfig[_key]
+	configItem, exists := aConfig[strings.ToUpper(_key)]
 	if !exists {
 		return []string{}
 	}
@@ -229,7 +197,7 @@ func GetStrArray(_key string) []string {
 
 // 获取Arr配置
 func GetMap(_key string) map[string]string {
-	configItem, exists := mConfig[_key]
+	configItem, exists := mConfig[strings.ToUpper(_key)]
 	if !exists {
 		return map[string]string{}
 	}
