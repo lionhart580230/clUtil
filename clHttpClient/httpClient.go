@@ -30,7 +30,7 @@ type ClHttpClient struct {
 	contentType uint32                 // 请求文档类型
 	cert        *CertConfig            // 证书路径
 	ua          string                 // 设备类型
-
+	skipCert    bool                   // 忽略证书
 }
 
 type CertConfig struct {
@@ -113,6 +113,11 @@ func (this *ClHttpClient) SetCert(_certPath string, _keyPath string) {
 		CertFilePath: _certPath,
 		KeyFilePath:  _keyPath,
 	}
+}
+
+// 忽略证书
+func (this *ClHttpClient) SetSkipSecret(_skip bool) {
+	this.skipCert = _skip
 }
 
 // 添加参数
@@ -214,6 +219,8 @@ func (this *ClHttpClient) Do() (*Response, error) {
 			tlsConfig.RootCAs = pool
 			tlsConfig.InsecureSkipVerify = true
 			tlsConfig.Certificates = []tls.Certificate{cliCrt}
+		} else {
+			tlsConfig.InsecureSkipVerify = this.skipCert
 		}
 
 		client = &http.Client{
